@@ -35,12 +35,12 @@ app.use(express.json())
 
 // ── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes)
-app.use('/api/crops',        cropRoutes)
-app.use('/api/demand',       demandRoutes)
-app.use('/api/ai',           aiRoutes)
-app.use('/api/bookings',     bookingRoutes)
-app.use('/api/orders',       orderRoutes)
-app.use('/api/payments',     paymentRoutes)
+app.use('/api/crops',         cropRoutes)
+app.use('/api/demand',        demandRoutes)
+app.use('/api/ai',            aiRoutes)
+app.use('/api/bookings',      bookingRoutes)
+app.use('/api/orders',        orderRoutes)
+app.use('/api/payments',      paymentRoutes)
 app.use('/api/farmers',       farmerRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/traceability',  traceabilityRoutes)
@@ -49,13 +49,13 @@ app.use('/api/requirements',  requirementRoutes)
 app.use('/api/buyers',        buyerRoutes)
 app.use('/api/transporter',   transporterRoutes)
 
-// Health check
+// ── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'AgriFlow API' }))
 
-// 404 handler
+// ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ message: 'Route not found' }))
 
-// Global error handler
+// ── Global error handler ──────────────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
   console.error(err.stack)
   res.status(err.status || 500).json({
@@ -63,7 +63,7 @@ app.use((err, _req, res, _next) => {
   })
 })
 
-// ── Database + Server ───────────────────────────────────────────────────────
+// ── Database + Server ─────────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -74,4 +74,3 @@ mongoose
     console.error('❌ MongoDB connection failed:', err.message)
     process.exit(1)
   })
-
