@@ -45,7 +45,11 @@ prevention, demand forecasting, and transport optimisation.
 - Node.js + Express.js (`backend/server.js`, port `5000`)
 - MongoDB + Mongoose
 - JWT authentication (`jsonwebtoken`) + bcrypt password hashing (`bcryptjs`)
-- CORS allowed origin: `http://localhost:5173`
+- CORS allowed origins:
+  - `http://localhost:5173` (local dev)
+  - `https://agri-flow1.vercel.app` (production)
+  - `https://agri-flow1-bi60ktc2i-shabaansatarkar05-8846s-projects.vercel.app` (Vercel preview)
+  - `credentials: true`
 
 ### AI (current vs planned)
 - **Current:** Four farmer-facing agents as Node.js modules under
@@ -421,7 +425,7 @@ backend/
     └── traceabilityService.js ← idempotent createEvent + readers
 ```
 
-Backend runs on `http://localhost:5000`. CORS is configured for `http://localhost:5173`.
+Backend runs on `http://localhost:5000`. CORS is configured for `http://localhost:5173`, `https://agri-flow1.vercel.app`, and the Vercel preview URL, all with `credentials: true`.
 Health: `GET /api/health`.
 
 There is **no** dedicated Pickup/Delivery Mongoose model. Pickup/delivery is
