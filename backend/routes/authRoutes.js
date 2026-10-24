@@ -1,0 +1,19 @@
+const express = require('express')
+const { register, login, getMe, changePassword } = require('../controllers/authController')
+const { protect } = require('../middleware/auth')
+
+const router = express.Router()
+
+// POST /api/auth/register
+router.post('/register', register)
+
+// POST /api/auth/login
+router.post('/login', login)
+
+// GET  /api/auth/me (protected)
+router.get('/me', protect, getMe)
+
+// PUT  /api/auth/change-password (protected)
+router.put('/change-password', protect, changePassword)
+
+module.exports = router
