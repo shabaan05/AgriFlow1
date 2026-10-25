@@ -26,6 +26,7 @@ const PORT = process.env.PORT || 5000
 app.use(cors({
   origin: [
     'http://localhost:5173',
+    'https://agriflow-lac.vercel.app',
     'https://agri-flow1.vercel.app',
     'https://agri-flow1-bi60ktc2i-shabaansatarkar05-8846s-projects.vercel.app'
   ],
