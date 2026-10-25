@@ -36,11 +36,12 @@ import BuyerRequirements   from './pages/farmer/demand/BuyerRequirements.jsx'
 import DemandOpportunities from './pages/farmer/demand/DemandOpportunities.jsx'
 
 // AI Centre Module
-import AICentreDashboard from './pages/farmer/ai/AICentreDashboard.jsx'
-import BuyerMatchAgent   from './pages/farmer/ai/BuyerMatchAgent.jsx'
-import HarvestPlanner    from './pages/farmer/ai/HarvestPlanner.jsx'
-import ShelfLifeMonitor  from './pages/farmer/ai/ShelfLifeMonitor.jsx'
-import WastagePrevention from './pages/farmer/ai/WastagePrevention.jsx'
+import AICentreDashboard    from './pages/farmer/ai/AICentreDashboard.jsx'
+import BuyerMatchAgent      from './pages/farmer/ai/BuyerMatchAgent.jsx'
+import HarvestPlanner       from './pages/farmer/ai/HarvestPlanner.jsx'
+import ShelfLifeMonitor     from './pages/farmer/ai/ShelfLifeMonitor.jsx'
+import WastagePrevention    from './pages/farmer/ai/WastagePrevention.jsx'
+import FarmerDemandForecast from './pages/farmer/ai/FarmerDemandForecast.jsx'
 
 // Bookings & Orders Module
 import Bookings        from './pages/farmer/orders/Bookings.jsx'
@@ -103,13 +104,13 @@ import TripDetail           from './pages/transporter/trips/TripDetail.jsx'
 import TransporterEarnings  from './pages/transporter/earnings/Earnings.jsx'
 import TransporterEarningDetail from './pages/transporter/earnings/EarningDetail.jsx'
 import TransporterProfilePage from './pages/transporter/profile/TransporterProfile.jsx'
-import {
-  TransporterRoutes,
-} from './pages/transporter/placeholders.jsx'
+// Transporter Route Optimization — real page
+import RouteOptimization from './pages/transporter/routes/RouteOptimization.jsx'
 
-import {
-  BuyerAICentre, DemandForecast,
-} from './pages/buyer/placeholders.jsx'
+// Buyer AI Centre — real pages
+import BuyerAICentre from './pages/buyer/ai/BuyerAICentre.jsx'
+import BuyerMatchPage from './pages/buyer/ai/BuyerMatchPage.jsx'
+import DemandForecastPage from './pages/buyer/ai/DemandForecastPage.jsx'
 
 export default function App() {
   return (
@@ -163,6 +164,7 @@ export default function App() {
                 <Route path="harvest-planner"       element={<HarvestPlanner />} />
                 <Route path="shelf-life"            element={<ShelfLifeMonitor />} />
                 <Route path="wastage-prevention"    element={<WastagePrevention />} />
+                <Route path="demand-forecast"       element={<FarmerDemandForecast />} />
               </Route>
               {/* Bookings & Orders — tab shell */}
               <Route path="orders" element={<FarmerOrders />}>
@@ -213,7 +215,8 @@ export default function App() {
 
               {/* AI Centre */}
               <Route path="ai"                               element={<BuyerAICentre />} />
-              <Route path="ai/demand-forecast"              element={<DemandForecast />} />
+              <Route path="ai/buyer-match"                   element={<BuyerMatchPage />} />
+              <Route path="ai/demand-forecast"               element={<DemandForecastPage />} />
 
               {/* Bookings & Orders */}
               <Route path="bookings"                         element={<BuyerBookingsList />} />
@@ -249,7 +252,7 @@ export default function App() {
               <Route path="pickups/:id" element={<PickupRequestDetail />} />
               <Route path="trips"     element={<MyTrips />} />
               <Route path="trips/:id"  element={<TripDetail />} />
-              <Route path="routes"    element={<TransporterRoutes />} />
+              <Route path="routes"    element={<RouteOptimization />} />
               <Route path="earnings"  element={<TransporterEarnings />} />
               <Route path="earnings/:id" element={<TransporterEarningDetail />} />
               <Route path="profile"   element={<TransporterProfilePage />} />

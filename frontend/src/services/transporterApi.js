@@ -65,3 +65,10 @@ export const submitTransporterVerification = (d) => request('POST', '/api/transp
 export const fetchTransporterPaymentDetails = () => request('GET',  '/api/transporter/payment-details')
 export const updateTransporterPaymentDetails= (d)=> request('PUT',  '/api/transporter/payment-details', d)
 export const updateTransporterNotifPrefs  = (d) => request('PUT',  '/api/transporter/notification-prefs', d)
+
+/**
+ * Route Optimization: POST /api/transporter/routes/optimize
+ * body: { pickupRequestIds: string[], vehicleCapacity: number }
+ * Returns: { success, route[], stops[], totalDistanceKm, estimatedDurationMinutes, totalLoadKg, ... }
+ */
+export const optimizeRoute = (body) => request('POST', '/api/transporter/routes/optimize', body)

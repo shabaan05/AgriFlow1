@@ -23,6 +23,7 @@ const {
   getTransporterPaymentDetails,
   updateTransporterPaymentDetails,
   updateTransporterNotifPrefs,
+  optimizeRoute,
 } = require('../controllers/transporterController')
 
 const router = express.Router()
@@ -42,6 +43,10 @@ router.get('/trips/:id',              getTripById)
 router.put('/trips/:id/pickup',       markPickedUp)
 router.put('/trips/:id/in-transit',  markInTransit)
 router.put('/trips/:id/delivered',    markDelivered)
+
+// ── Route Optimization ────────────────────────────────────────────────────────
+// POST /api/transporter/routes/optimize
+router.post('/routes/optimize',       optimizeRoute)
 
 // ── Earnings ──────────────────────────────────────────────────────────────────
 router.get('/earnings',               getEarnings)
