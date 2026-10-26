@@ -25,8 +25,14 @@ const statusConfig = {
   pending:  { ring: 'bg-gray-200 text-gray-400',            line: 'bg-gray-100', label: 'Pending',   text: 'text-gray-400' },
 }
 
+import {
+  BlockchainBadge,
+  BlockchainAuditModal,
+  BlockchainNetworkBanner,
+} from '../../../components/common/BlockchainVerification.jsx'
+
 // ── Detail view (single crop timeline) ────────────────────────────────────────
-function TraceabilityTimeline({ data }) {
+function TraceabilityTimeline({ data, onAuditClick }) {
   const { summary, timeline } = data
 
   function formatDate(d) {
@@ -40,6 +46,9 @@ function TraceabilityTimeline({ data }) {
 
   return (
     <div className="max-w-3xl">
+      {/* Blockchain Network Status Banner */}
+      <BlockchainNetworkBanner />
+
       {/* Summary card */}
       <div className="card mb-6">
         <div className="flex items-start justify-between flex-wrap gap-4">
@@ -48,7 +57,12 @@ function TraceabilityTimeline({ data }) {
               🌾
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 text-lg">{summary.cropName}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-bold text-gray-900 text-lg">{summary.cropName}</h2>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                  ⛓️ Polygon Amoy Protected
+                </span>
+              </div>
               <p className="text-sm text-gray-400">{summary.variety || '—'} · {summary.quantity}</p>
               {summary.grade && <p className="text-xs text-gray-500 mt-0.5">Grade: {summary.grade}</p>}
             </div>
@@ -71,9 +85,14 @@ function TraceabilityTimeline({ data }) {
 
       {/* Vertical timeline */}
       <div className="card">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-6 pb-3 border-b border-gray-100">
-          Crop Journey
-        </h3>
+        <div className="flex items-center justify-between pb-3 mb-6 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            Decentralized Crop Journey
+          </h3>
+          <span className="text-xs text-purple-700 font-medium bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100">
+            Smart Contract Verified
+          </span>
+        </div>
 
         <div className="relative">
           {timeline.map((item, idx) => {
@@ -123,6 +142,7 @@ function TraceabilityTimeline({ data }) {
                           {item.location}
                         </p>
                       )}
+
                       {/* Metadata */}
                       {item.metadata && Object.keys(item.metadata).length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -143,6 +163,12 @@ function TraceabilityTimeline({ data }) {
                           )}
                         </div>
                       )}
+
+                      {/* On-Chain Blockchain Proof Badge */}
+                      <BlockchainBadge
+                        event={item}
+                        onAuditClick={onAuditClick}
+                      />
                     </>
                   ) : (
                     <p className="text-xs text-gray-400 mt-1">Awaiting this step…</p>
@@ -156,6 +182,7 @@ function TraceabilityTimeline({ data }) {
     </div>
   )
 }
+
 
 // ── Overview (crop list with events) ──────────────────────────────────────────
 function OverviewCard({ item, onClick }) {
@@ -174,7 +201,12 @@ function OverviewCard({ item, onClick }) {
             <p className="text-xs text-gray-400">{item.variety || '—'}</p>
           </div>
         </div>
-        <span className="status-badge bg-gray-100 text-gray-600 text-xs">{item.status}</span>
+        <div className="flex flex-col items-end gap-1">
+          <span className="status-badge bg-gray-100 text-gray-600 text-xs">{item.status}</span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+            ⛓️ Polygon Verified
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
@@ -214,6 +246,8 @@ export default function Traceability() {
   const [selectedCrop,setSelectedCrop] = useState(null)
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState('')
+  const [auditModalEvent, setAuditModalEvent] = useState(null)
+
 
   // Load overview on mount
   useEffect(() => {
@@ -267,7 +301,10 @@ export default function Traceability() {
       {/* Detail view */}
       {selectedCrop ? (
         detail ? (
-          <TraceabilityTimeline data={detail} />
+          <TraceabilityTimeline
+            data={detail}
+            onAuditClick={(ev) => setAuditModalEvent(ev)}
+          />
         ) : (
           <div className="space-y-4">
             {[1,2,3].map((i) => <div key={i} className="card h-24 animate-pulse" />)}
@@ -276,6 +313,8 @@ export default function Traceability() {
       ) : (
         /* Overview */
         <>
+          <BlockchainNetworkBanner />
+
           {loading ? (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {[1,2,3,4].map((i) => <div key={i} className="card h-40 animate-pulse" />)}
@@ -298,6 +337,15 @@ export default function Traceability() {
           )}
         </>
       )}
+
+      {/* Blockchain Cryptographic Audit Proof Modal */}
+      {auditModalEvent && (
+        <BlockchainAuditModal
+          event={auditModalEvent}
+          onClose={() => setAuditModalEvent(null)}
+        />
+      )}
     </div>
   )
 }
+

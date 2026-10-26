@@ -33,3 +33,7 @@ export const fetchBuyerTraceability     = ()        => get('/api/traceability/bu
 
 // GET /api/traceability/buyer/order/:orderId — buyer order timeline (ownership verified)
 export const fetchBuyerOrderTraceability = (orderId) => get(`/api/traceability/buyer/order/${orderId}`)
+
+// GET /api/traceability/blockchain/status — live Polygon Amoy network status
+export const fetchBlockchainStatus       = ()        => get('/api/traceability/blockchain/status')
+

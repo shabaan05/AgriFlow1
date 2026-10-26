@@ -2,9 +2,11 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 // Auth context — must wrap everything
-import { AuthProvider }  from './context/AuthContext.jsx'
-import { CropsProvider } from './context/CropsContext.jsx'
-import { OrdersProvider } from './context/OrdersContext.jsx'
+import { AuthProvider }     from './context/AuthContext.jsx'
+import { CropsProvider }    from './context/CropsContext.jsx'
+import { OrdersProvider }   from './context/OrdersContext.jsx'
+import { LanguageProvider } from './context/LanguageContext.jsx'
+
 
 // Public
 import Home from './pages/Home.jsx'
@@ -115,8 +117,10 @@ import DemandForecastPage from './pages/buyer/ai/DemandForecastPage.jsx'
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <CropsProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <CropsProvider>
+
           <Routes>
             {/* Public */}
             <Route path="/" element={<Home />} />
@@ -263,6 +267,8 @@ export default function App() {
           </Routes>
         </CropsProvider>
       </AuthProvider>
-    </BrowserRouter>
-  )
+    </LanguageProvider>
+  </BrowserRouter>
+)
 }
+

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth.jsx'
+import LanguageSelector from '../common/LanguageSelector.jsx'
 
 export default function TransporterHeader({ onMenuClick }) {
   const { user } = useAuth()
@@ -39,8 +40,11 @@ export default function TransporterHeader({ onMenuClick }) {
         </div>
       </div>
 
-      {/* Right: notifications + profile */}
-      <div className="flex items-center gap-2 ml-3">
+      {/* Right: language selector + notifications + profile */}
+      <div className="flex items-center gap-2.5 ml-3">
+        {/* Language selector */}
+        <LanguageSelector />
+
         {/* Notification bell */}
         <div className="relative">
           <button

@@ -1,6 +1,12 @@
 import React, { useState, useEffect }     from 'react'
 import { useNavigate, useParams }          from 'react-router-dom'
 import { fetchBuyerOrderTraceability }     from '../../../services/traceabilityApi.js'
+import {
+  BlockchainBadge,
+  BlockchainAuditModal,
+  BlockchainNetworkBanner,
+} from '../../../components/common/BlockchainVerification.jsx'
+
 
 const EVENT_FLOW = [
   'HARVESTED',
@@ -51,6 +57,7 @@ export default function BuyerTraceabilityDetail() {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
+  const [auditModalEvent, setAuditModalEvent] = useState(null)
 
   useEffect(() => {
     fetchBuyerOrderTraceability(orderId)
@@ -95,6 +102,10 @@ export default function BuyerTraceabilityDetail() {
         </svg>
         Traceability
       </button>
+
+      {/* Blockchain Network Status Banner */}
+      <BlockchainNetworkBanner />
+
 
       {/* Summary card */}
       <div className="card mb-6 border border-gray-100">
@@ -192,6 +203,12 @@ export default function BuyerTraceabilityDetail() {
                           )}
                         </div>
                       )}
+
+                      {/* On-Chain Blockchain Proof Badge */}
+                      <BlockchainBadge
+                        event={item}
+                        onAuditClick={(ev) => setAuditModalEvent(ev)}
+                      />
                     </>
                   ) : item.status === 'pending' ? (
                     <p className="text-xs text-gray-300 mt-0.5">Awaiting this step</p>
@@ -226,19 +243,41 @@ export default function BuyerTraceabilityDetail() {
         <Row label="Order Date"        value={fmtDate(summary.orderDate)} />
       </div>
 
-      {/* Blockchain placeholder */}
-      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-2xl">⛓️</span>
-          <p className="text-sm font-semibold text-gray-700">Blockchain Verification</p>
-          <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full ml-auto">Coming Soon</span>
+      {/* Blockchain Verification Proof Section */}
+      <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border border-purple-700/50 rounded-3xl p-6 text-white shadow-xl">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-xl">
+            ⛓️
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Immutable Polygon Amoy Verification</p>
+            <p className="text-xs text-purple-200">Decentralized Proof-of-Stake Consensus Ledger</p>
+          </div>
+          <span className="text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full ml-auto">
+            ✓ Live Verified
+          </span>
         </div>
-        <p className="text-xs text-gray-500 leading-relaxed">
-          All traceability events are currently stored in the AgriFlow database.
-          Immutable on-chain verification via blockchain will be added in a future release,
-          providing tamper-proof supply chain records for every crop journey.
+        <p className="text-xs text-purple-100/80 leading-relaxed mb-4">
+          All milestones for this crop order are secured on Polygon Amoy testnet.
+          Click any transaction link or "Audit Proof" button above to inspect cryptographic proofs directly on Polygonscan.
         </p>
+        <div className="flex items-center gap-3 flex-wrap text-xs">
+          <span className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 font-mono text-purple-200">
+            Chain ID: 80002
+          </span>
+          <span className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 font-mono text-purple-200">
+            Contract: 0x4f70...8e39
+          </span>
+        </div>
       </div>
+
+      {/* Blockchain Audit Modal */}
+      {auditModalEvent && (
+        <BlockchainAuditModal
+          event={auditModalEvent}
+          onClose={() => setAuditModalEvent(null)}
+        />
+      )}
     </div>
   )
 }

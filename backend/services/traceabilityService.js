@@ -11,9 +11,11 @@
  */
 
 const TraceabilityEvent = require('../models/TraceabilityEvent')
+const { recordOnChain } = require('./blockchainService')
 
 /**
  * Create a traceability event if one doesn't already exist.
+ * Automatically anchors the event to Polygon Amoy Testnet.
  *
  * @param {Object} params
  * @param {ObjectId} params.farmerId   — required
@@ -45,11 +47,40 @@ async function createEvent(params) {
 
     const existing = await TraceabilityEvent.findOne(query)
     if (existing) {
-      // Event already recorded — return it without creating a duplicate
+      // If existing event lacks blockchain hash, backfill it
+      if (!existing.txHash || !existing.onChain) {
+        try {
+          const chainResult = await recordOnChain({
+            batchId: orderId || cropId,
+            eventType,
+            location,
+            metadata,
+          })
+          if (chainResult) {
+            existing.txHash = chainResult.txHash
+            existing.blockNumber = chainResult.blockNumber
+            existing.onChain = true
+            await existing.save()
+          }
+        } catch (_) {}
+      }
       return existing
     }
 
-    // ── Create new event ──────────────────────────────────────────────────
+    // ── Record on Polygon Amoy Blockchain ─────────────────────────────────
+    let chainRecord = { txHash: null, blockNumber: null, onChain: false }
+    try {
+      chainRecord = await recordOnChain({
+        batchId: orderId || cropId,
+        eventType,
+        location,
+        metadata,
+      })
+    } catch (chainErr) {
+      console.warn('[traceability] Blockchain recording warning:', chainErr.message)
+    }
+
+    // ── Create new event in MongoDB ────────────────────────────────────────
     const event = await TraceabilityEvent.create({
       farmerId,
       cropId,
@@ -60,6 +91,9 @@ async function createEvent(params) {
       location,
       timestamp: timestamp || new Date(),
       metadata,
+      txHash: chainRecord.txHash,
+      blockNumber: chainRecord.blockNumber,
+      onChain: Boolean(chainRecord.onChain),
     })
 
     return event
@@ -70,27 +104,55 @@ async function createEvent(params) {
   }
 }
 
+async function backfillEvents(events) {
+  for (const e of events) {
+    if (!e.txHash || !e.onChain) {
+      try {
+        const chainResult = await recordOnChain({
+          batchId: e.orderId || e.cropId,
+          eventType: e.eventType,
+          location: e.location,
+          metadata: e.metadata,
+        })
+        if (chainResult) {
+          e.txHash = chainResult.txHash
+          e.blockNumber = chainResult.blockNumber
+          e.onChain = true
+          await e.save()
+        }
+      } catch (_) {}
+    }
+  }
+}
+
 /**
  * Fetch all events for a specific crop, ordered chronologically.
  */
 async function getEventsByCrop(cropId, farmerId) {
-  return TraceabilityEvent.find({ cropId, farmerId }).sort({ timestamp: 1 })
+  const events = await TraceabilityEvent.find({ cropId, farmerId }).sort({ timestamp: 1 })
+  await backfillEvents(events)
+  return events
 }
 
 /**
  * Fetch all events for a specific order, ordered chronologically.
  */
 async function getEventsByOrder(orderId, farmerId) {
-  return TraceabilityEvent.find({ orderId, farmerId }).sort({ timestamp: 1 })
+  const events = await TraceabilityEvent.find({ orderId, farmerId }).sort({ timestamp: 1 })
+  await backfillEvents(events)
+  return events
 }
 
 /**
  * Fetch all events for a farmer (used for the overview page).
  */
 async function getEventsByFarmer(farmerId) {
-  return TraceabilityEvent.find({ farmerId })
+  const events = await TraceabilityEvent.find({ farmerId })
     .sort({ timestamp: -1 })
     .limit(100)
+  await backfillEvents(events)
+  return events
 }
 
 module.exports = { createEvent, getEventsByCrop, getEventsByOrder, getEventsByFarmer }
+

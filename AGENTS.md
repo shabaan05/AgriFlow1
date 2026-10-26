@@ -60,13 +60,19 @@ prevention, demand forecasting, and transport optimisation.
 - Demand Forecast Agent and Transport Agent have **no backend agent
   modules**. Buyer AI Centre pages are placeholders.
 
+### Blockchain & Multilingual (active)
+- **Blockchain:** Polygon Amoy Testnet (Chain ID 80002) integration via `ethers.js` + Solidity Smart Contract `blockchain/contracts/AgriTraceability.sol`.
+  - Implements immutable on-chain crop event recording (`HARVESTED` through `PAYMENT_RECEIVED`).
+  - Backend service: `backend/services/blockchainService.js` with live RPC connectivity and cryptographic fallback.
+  - Interactive UI: `BlockchainNetworkBanner`, `BlockchainBadge` with direct Polygonscan Explorer links, and `BlockchainAuditModal`.
+- **Multilingual Support:** English (EN), Hindi (HI - हिन्दी), and Marathi (MR - मराठी) supported across Home, Farmer, Buyer, and Transporter portals via `LanguageContext` and `LanguageSelector`.
+
 ### Other planned
-- Blockchain / smart contracts (traceability has `txHash` / `onChain` fields,
-  unused)
 - Payment gateway / online processing
 - Real-time GPS / routing / transport optimisation
 - Docker
 - Refresh tokens
+
 
 ---
 
