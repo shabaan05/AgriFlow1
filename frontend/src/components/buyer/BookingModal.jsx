@@ -11,17 +11,17 @@ export default function BookingModal({ crop, onSuccess, onClose }) {
   const { user } = useAuth()
 
   const [form, setForm] = useState({
-    quantity:            '',
-    pricePerUnit:        crop.expectedPrice || '',
-    deliveryLocation:    '',
+    quantity: '',
+    pricePerUnit: crop.expectedPrice || '',
+    deliveryLocation: '',
     requestedDeliveryDate: '',
-    notes:               '',
+    notes: '',
   })
-  const [errors,   setErrors]   = useState({})
-  const [loading,  setLoading]  = useState(false)
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
 
-  const availQty  = crop.availableQty || 0
+  const availQty = crop.availableQty || 0
   const totalCalc = form.quantity && form.pricePerUnit
     ? (Number(form.quantity) * Number(form.pricePerUnit)).toLocaleString()
     : '—'
@@ -33,11 +33,11 @@ export default function BookingModal({ crop, onSuccess, onClose }) {
 
   function validate() {
     const e = {}
-    if (!form.quantity || Number(form.quantity) <= 0)         e.quantity = 'Quantity must be greater than 0.'
-    if (Number(form.quantity) > availQty)                     e.quantity = `Cannot exceed available quantity (${availQty} ${crop.unit}).`
+    if (!form.quantity || Number(form.quantity) <= 0) e.quantity = 'Quantity must be greater than 0.'
+    if (Number(form.quantity) > availQty) e.quantity = `Cannot exceed available quantity (${availQty} ${crop.unit}).`
     if (!form.pricePerUnit || Number(form.pricePerUnit) <= 0) e.pricePerUnit = 'Price is required.'
-    if (!form.deliveryLocation.trim())                        e.deliveryLocation = 'Delivery location is required.'
-    if (!form.requestedDeliveryDate)                          e.requestedDeliveryDate = 'Delivery date is required.'
+    if (!form.deliveryLocation.trim()) e.deliveryLocation = 'Delivery location is required.'
+    if (!form.requestedDeliveryDate) e.requestedDeliveryDate = 'Delivery date is required.'
     return e
   }
 
@@ -50,17 +50,17 @@ export default function BookingModal({ crop, onSuccess, onClose }) {
     setLoading(true)
     try {
       const booking = await createBooking({
-        cropId:               crop.id,
-        farmerId:             crop.farmer?.id || undefined,
+        cropId: crop.id,
+        farmerId: crop.farmer?.id || undefined,
         // buyerName etc. derived from JWT on backend; send as backup
-        buyerName:            user?.name || 'Buyer',
-        buyerCompany:         '',
-        buyerContact:         user?.phone || '',
-        quantity:             Number(form.quantity),
-        pricePerUnit:         Number(form.pricePerUnit),
-        deliveryLocation:     form.deliveryLocation,
+        buyerName: user?.name || 'Buyer',
+        buyerCompany: '',
+        buyerContact: user?.phone || '',
+        quantity: Number(form.quantity),
+        pricePerUnit: Number(form.pricePerUnit),
+        deliveryLocation: form.deliveryLocation,
         requestedDeliveryDate: form.requestedDeliveryDate,
-        notes:                form.notes,
+        notes: form.notes,
       })
       onSuccess(booking)
     } catch (err) {
@@ -91,12 +91,12 @@ export default function BookingModal({ crop, onSuccess, onClose }) {
         <div className="px-6 pt-4 pb-2">
           <div className="bg-agri-light rounded-2xl p-4 grid grid-cols-2 gap-3 text-xs">
             {[
-              { l: 'Available Qty',   v: `${availQty} ${crop.unit}` },
-              { l: 'Listed Price',    v: `₹${crop.expectedPrice}/${crop.unit}` },
-              { l: 'Grade',           v: crop.grade },
-              { l: 'Harvest Date',    v: crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—' },
-              { l: 'Farmer',          v: crop.farmer?.name || '—' },
-              { l: 'Verified',        v: crop.farmer?.verification === 'Verified' ? '✓ Yes' : 'No' },
+              { l: 'Available Qty', v: `${availQty} ${crop.unit}` },
+              { l: 'Listed Price', v: `₹${crop.expectedPrice}/${crop.unit}` },
+              { l: 'Grade', v: crop.grade },
+              { l: 'Harvest Date', v: crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—' },
+              { l: 'Farmer', v: crop.farmer?.name || '—' },
+              { l: 'Verified', v: crop.farmer?.verification === 'Verified' ? '✓ Yes' : 'No' },
             ].map(({ l, v }) => (
               <div key={l}>
                 <p className="text-gray-400">{l}</p>
@@ -174,8 +174,8 @@ export default function BookingModal({ crop, onSuccess, onClose }) {
               {loading ? (
                 <>
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                   Sending…
                 </>

@@ -64,13 +64,19 @@ by React Router instead of returning a 404. Do not remove this file.
 - Demand Forecast Agent and Transport Agent have **no backend agent
   modules**. Buyer AI Centre pages are placeholders.
 
+### Blockchain & Multilingual (active)
+- **Blockchain:** Polygon Amoy Testnet (Chain ID 80002) integration via `ethers.js` + Solidity Smart Contract `blockchain/contracts/AgriTraceability.sol`.
+  - Implements immutable on-chain crop event recording (`HARVESTED` through `PAYMENT_RECEIVED`).
+  - Backend service: `backend/services/blockchainService.js` with live RPC connectivity and cryptographic fallback.
+  - Interactive UI: `BlockchainNetworkBanner`, `BlockchainBadge` with direct Polygonscan Explorer links, and `BlockchainAuditModal`.
+- **Multilingual Support:** English (EN), Hindi (HI - हिन्दी), and Marathi (MR - मराठी) supported across Home, Farmer, Buyer, and Transporter portals via `LanguageContext` and `LanguageSelector`.
+
 ### Other planned
-- Blockchain / smart contracts (traceability has `txHash` / `onChain` fields,
-  unused)
 - Payment gateway / online processing
 - Real-time GPS / routing / transport optimisation
 - Docker
 - Refresh tokens
+
 
 ---
 
@@ -217,11 +223,12 @@ guarded by `ProtectedRoute`.
 | `/farmer/demand` | `MarketDemand` | Nested under `FarmerDemand` tabs |
 | `/farmer/demand/buyers` | `BuyerRequirements` | Farmer view of demand-board requirements |
 | `/farmer/demand/opportunities` | `DemandOpportunities` | Pre-book action is still a toast placeholder |
-| `/farmer/ai` | `AICentreDashboard` | Demo agents |
+| `/farmer/ai` | `AICentreDashboard` | Demo agents + Demand Forecast card |
 | `/farmer/ai/buyer-matches` | `BuyerMatchAgent` | |
 | `/farmer/ai/harvest-planner` | `HarvestPlanner` | |
 | `/farmer/ai/shelf-life` | `ShelfLifeMonitor` | |
 | `/farmer/ai/wastage-prevention` | `WastagePrevention` | |
+| `/farmer/ai/demand-forecast` | `FarmerDemandForecast` | ✅ Live — real WMA forecast |
 | `/farmer/orders` | `Bookings` | Tab shell: `FarmerOrders` |
 | `/farmer/orders/active` | `Orders` | |
 | `/farmer/bookings/:id` | `BookingDetail` | |
@@ -257,8 +264,8 @@ guarded by `BuyerProtectedRoute`.
 | `/buyer/delivery/:id` | `BuyerDeliveryTracking` | Status timeline from order API; **GPS is a UI placeholder** |
 | `/buyer/payments` | `BuyerPayments` | Implemented (manual tracking; gateway “coming soon”) |
 | `/buyer/traceability` | `BuyerTraceability` | **Placeholder** |
-| `/buyer/ai` | `BuyerAICentre` | **Placeholder** |
-| `/buyer/ai/demand-forecast` | `DemandForecast` | **Placeholder** |
+| `/buyer/ai` | `BuyerAICentre` | **✅ Real page — AI Centre dashboard** |
+| `/buyer/ai/demand-forecast` | `DemandForecastPage` | **✅ Real page — Demand Forecast Agent UI** |
 | `/buyer/profile` | `BuyerProfile` | **Placeholder** |
 | `/buyer/profile/verification` | `BuyerVerification` | **Placeholder** |
 | `/buyer/profile/payment-details` | `BuyerPaymentDetails` | **Placeholder** |
@@ -295,7 +302,7 @@ Do not change without explicit request.
 1. Dashboard → `/buyer/dashboard`
 2. Marketplace → Browse `/buyer/marketplace`, Shortlisted `/buyer/marketplace/shortlisted`
 3. Requirements → My Requirements `/buyer/requirements`, Create `/buyer/requirements/create`
-4. AI Centre → Buyer Match `/buyer/ai`, Demand Forecast `/buyer/ai/demand-forecast` (placeholders)
+4. AI Centre → Buyer Match `/buyer/ai/buyer-match`, Demand Forecast `/buyer/ai/demand-forecast` (both Live)
 5. Bookings & Orders → Bookings, Orders, Delivery Tracking (`/buyer/delivery` list → `/buyer/delivery/:id`), Payments, Traceability (placeholder)
 6. Profile → Personal / Business, Verification, Payment Details, Notifications, Settings (all placeholders)
 
@@ -603,6 +610,7 @@ Requirements — `protect`: `POST/GET /api/requirements`,
 | Transporter My Trips & Delivery | ✅ Complete — trip list, trip detail, delivery status workflow (Picked Up → In Transit → Delivered), Order sync, Traceability events |
 | Transporter Earnings | ✅ Complete — auto-generated on trip completion, KPI dashboard, history table, earning breakdown, pending/paid status |
 | Transporter Profile | ✅ Complete — Personal, Vehicle, Verification, Payment, Notifications, Settings (change password, logout) |
+| Route Optimization | ✅ Complete — deterministic pickup sequencing, capacity validation, stop timeline UI |
 | Admin module | Not started |
 | Real ML / Python agents | Not started (demo Node agents only) |
 | Refresh tokens | Not started |
@@ -614,15 +622,212 @@ Requirements — `protect`: `POST/GET /api/requirements`,
 
 ### Current Next Task
 
-Finish remaining **Buyer** surfaces that are still placeholders, without
-treating them as done:
+Remaining **Buyer** placeholder surfaces not yet built:
 
-1. Buyer Traceability
-2. Buyer Profile (personal/business, verification, payment details, notifications, settings)
-3. Buyer AI Centre (Buyer Match + Demand Forecast) — UI only until ML is requested
+1. Buyer Traceability (now complete — see Buyer Traceability section)
+2. Buyer Profile (now complete — see Buyer Profile section)
+3. Buyer AI Centre — Demand Forecast still a placeholder
 
 Do **not** start Transporter or Admin modules, and do **not** implement real
 ML, until explicitly instructed.
+
+---
+
+## Buyer AI Centre — Phase 2 (Buyer Match UI)
+
+### Overview
+
+Full Buyer–Farmer Matching Agent UI inside the existing Buyer AI Centre.
+Powered by the backend `POST /api/ai/buyer-match` endpoint (rule-based, no ML).
+Explainable ranking with per-factor score breakdown and booking actions.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/pages/buyer/ai/BuyerAICentre.jsx` | AI Centre landing page at `/buyer/ai` — agent card grid with Live/Coming Soon badges |
+| `frontend/src/pages/buyer/ai/BuyerMatchPage.jsx` | Full matching UI at `/buyer/ai/buyer-match` — form, results, score ring, factor bars, booking |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `frontend/src/services/aiApi.js` | Added `post()` helper; added `runBuyerMatch(criteria)` → `POST /api/ai/buyer-match` |
+| `frontend/src/App.jsx` | Replaced `BuyerAICentre` and `DemandForecast` placeholder imports with real `BuyerAICentre.jsx`; added `Route path="ai/buyer-match"` → `BuyerMatchPage` |
+
+### Routes
+
+| Path | Component | Status |
+|------|-----------|--------|
+| `/buyer/ai` | `BuyerAICentre` | ✅ Real page — AI Centre dashboard |
+| `/buyer/ai/buyer-match` | `BuyerMatchPage` | ✅ Real page — Buyer Match Agent UI |
+| `/buyer/ai/demand-forecast` | `DemandForecastPage` | ✅ Real page — Demand Forecast Agent UI |
+
+### UI Feature Summary
+
+**Input form** (sticky sidebar):
+- Crop Name (required)
+- Required Quantity (kg)
+- Max Price per Kg (₹)
+- Minimum Quality Grade (Any / Grade A / B / C)
+- Required By Date (date picker, enforces future date)
+- Delivery City + State
+
+**Results panel**:
+- Meta bar: crops scanned, eligible, returned
+- `MatchCard` per result with:
+  - Animated SVG score ring (0–100) colour-coded by tier (Excellent/Good/Fair/Low)
+  - Rank 1 "Best Match" badge; verified farmer badge
+  - Key stats grid: price, available qty, grade, location, harvest date, status
+  - Expandable section: factor progress bars (6 factors) + "Why This Match?" reasons list
+  - "Book Now" button → reuses existing `BookingModal` + `POST /api/bookings` workflow
+- Scoring weights legend (pulled from `meta.weights` in API response)
+
+**States**:
+- Initial: prompt card
+- Loading: 3-card skeleton
+- Success with matches: ranked `MatchCard` list
+- Success with 0 matches: empty state with "Adjust Criteria" CTA
+- API / validation error: styled error card with "try again" link
+- Post-booking: green success banner with "View Bookings →" link
+
+**Auth**: uses existing `getStoredToken()` from `AuthContext` via `aiApi.js`. No new auth logic.
+
+**Booking**: reuses `BookingModal` component and `POST /api/bookings` — no new booking workflow.
+
+**Design**: matches Buyer UI system — Tailwind, `.card`, `.input-field`, `.btn-primary`, `.btn-outline`, agri-green palette, responsive grid.
+
+---
+
+## Buyer–Farmer Matching Agent (Backend)
+
+### Overview
+
+Rule-based, explainable ranking system. No ML, no LLM, no external AI APIs.
+Deterministic 0–100 weighted score per crop. Isolated in a dedicated service.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/buyerMatchService.js` | All matching logic — hard filter, per-factor scorers, composite scorer, `findMatches()` |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | Added `postBuyerMatch` handler; imports `buyerMatchService` |
+| `backend/routes/aiRoutes.js` | Added `POST /api/ai/buyer-match` route (imports `postBuyerMatch`) |
+
+### New Endpoint
+
+| Method | Path | Auth | Role |
+|--------|------|------|------|
+| `POST` | `/api/ai/buyer-match` | `protect` (JWT) | `buyer` only (hard-checked in controller) |
+
+#### Request body
+
+```json
+{
+  "cropName":         "Tomato",          // required
+  "quantity":         500,               // kg, optional
+  "maxPricePerKg":    40,                // optional
+  "qualityGrade":     "Grade A",         // "Grade A"|"Grade B"|"Grade C"|"Any", optional
+  "requiredByDate":   "2026-12-01",      // ISO date string, optional
+  "deliveryLocation": "Pune, Maharashtra" // optional
+}
+```
+
+#### Response (success)
+
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "cropId": "...",
+      "cropName": "Tomato",
+      "variety": "Cherry",
+      "category": "Vegetables",
+      "availableQuantityKg": 650,
+      "unit": "kg",
+      "expectedHarvestDate": "2026-11-10T00:00:00.000Z",
+      "expectedPricePerKg": 35,
+      "minimumPrice": 28,
+      "qualityGrade": "Grade A",
+      "farmLocation": "Nashik, Maharashtra",
+      "status": "Pre-Harvest",
+      "farmerId": "...",
+      "farmerName": "Ramesh Patil",
+      "farmerVerification": "Verified",
+      "farmName": "Green Acres",
+      "matchScore": 84,
+      "factors": {
+        "price": 90, "quality": 100, "quantity": 100,
+        "location": 60, "dateSuit": 70, "reliability": 70
+      },
+      "reasons": [
+        "Price ₹35/kg is within your budget of ₹40/kg",
+        "Exact quality match: Grade A",
+        "Fully covers your requirement — 650 kg available, 500 kg needed",
+        "Farm in Nashik, Maharashtra — same region as Pune, Maharashtra",
+        "Harvest date 2026-11-10 gives 21 days before your deadline",
+        "Farmer is platform-verified"
+      ]
+    }
+  ],
+  "meta": {
+    "total": 12,
+    "filtered": 5,
+    "returned": 5,
+    "cropName": "Tomato",
+    "weights": { "price": 25, "quality": 20, "quantity": 20, "location": 15, "dateSuit": 10, "reliability": 10 }
+  }
+}
+```
+
+### Matching Logic
+
+#### Hard Filters (all must pass to be eligible)
+
+1. `cropName` must match request (case-insensitive)
+2. `status` must be `Harvest Ready`, `Pre-Harvest`, or `Harvested`
+3. `availableQuantityKg > 0`
+4. If `maxPricePerKg` given: `crop.minimumAcceptablePrice <= maxPricePerKg`
+5. If `qualityGrade` given (not `Any`): crop grade must be ≥ requested tier
+6. If `requiredByDate` given: harvest date must be ≤ required-by date; stale requirements (past date) return a 400 error immediately
+
+#### Weighted Scoring (deterministic, 0–100)
+
+| Factor | Weight | Data source |
+|--------|--------|-------------|
+| Price | 25 % | `crop.expectedPricePerKg` vs `req.maxPricePerKg` |
+| Quality | 20 % | `crop.qualityGrade` vs `req.qualityGrade` |
+| Quantity | 20 % | `crop.availableQuantityKg` / `req.quantity` |
+| Location | 15 % | Token overlap: `crop.farmLocation` vs `req.deliveryLocation` |
+| Date suitability | 10 % | Days from harvest to required-by date |
+| Farmer reliability | 10 % | `User.verification.status` + account age in days |
+
+Weights are defined in `WEIGHTS` const at the top of `buyerMatchService.js` — change only there.
+
+#### Reliability proxy (no fabricated data)
+
+Uses only existing `User` fields:
+- `verification.status`: Verified → +60, Pending → +30, Not Verified → +10
+- Account age: +1 pt per 30 days, capped at +40
+
+#### Result
+
+- Up to **top 5** matches, ranked highest score first
+- Each match includes `matchScore`, per-factor `factors` object, and `reasons` string array
+- Empty results handled cleanly (no crash, descriptive message)
+
+### Security
+
+- `protect` middleware (JWT) runs on all `/api/ai/*` routes via `router.use(protect)`
+- `postBuyerMatch` controller additionally checks `req.user.role === 'buyer'` and returns 403 if not
+- Non-buyers (farmers, transporters) cannot access the endpoint
+- No existing auth, booking, order, or transporter logic modified
 
 ---
 
@@ -800,3 +1005,259 @@ All three dashboards now fetch real API data. No dashboard uses `mockData.js` or
 - `requirementsApi.fetchRequirements` — Buyer Dashboard procurement table
 - `marketplaceApi.fetchMarketplaceCrops` — Buyer Dashboard recommended supply
 - `transporterApi` (fetchPickupRequests, fetchTrips, fetchEarnings, fetchVehicleInfo) — Transporter Dashboard
+
+---
+
+## Demand Forecast Agent (Backend + UI)
+
+### Overview
+
+Rule-based, explainable demand forecasting service. No ML, no LLM, no external APIs.
+Uses a Weighted Moving Average (WMA) with an OLS linear trend projection.
+Confidence derived from the number of historical data points with non-zero demand.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/demandForecastService.js` | All forecast logic — data aggregation, WMA, OLS trend, projection, confidence, recommendation |
+| `frontend/src/pages/buyer/ai/DemandForecastPage.jsx` | Demand Forecast UI — form, KPI cards, SVG bar chart, recommendation, all states |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | Added `postDemandForecast` handler; imports `demandForecastService` |
+| `backend/routes/aiRoutes.js` | Added `POST /api/ai/demand-forecast` route |
+| `frontend/src/services/aiApi.js` | Added `runDemandForecast(body)` → `POST /api/ai/demand-forecast` |
+| `frontend/src/pages/buyer/ai/BuyerAICentre.jsx` | Demand Forecast card: badge changed from "Coming Soon" to "Live"; CTA enabled |
+| `frontend/src/App.jsx` | Replaced `DemandForecast` placeholder import with real `DemandForecastPage`; removed unused placeholder import |
+
+### New Endpoint
+
+| Method | Path | Auth | Role |
+|--------|------|------|------|
+| `POST` | `/api/ai/demand-forecast` | `protect` (JWT) | `buyer` only (hard-checked in controller) |
+
+#### Request body
+
+```json
+{
+  "cropName":       "Tomato",   // required
+  "forecastPeriod": "3"         // "1" | "3" | "6" | "12" (months), default 3
+}
+```
+
+#### Response (success)
+
+```json
+{
+  "success": true,
+  "hasData": true,
+  "cropName": "Tomato",
+  "forecastMonths": 3,
+  "forecastLabel": "3 months",
+  "trend": "INCREASING",
+  "demandLevel": "HIGH",
+  "expectedPriceMin": 27,
+  "expectedPriceMax": 33,
+  "confidence": "MEDIUM",
+  "confidenceScore": 55,
+  "recommendation": "Demand for Tomato is growing. Consider securing...",
+  "dataSources": ["4 completed orders", "2 accepted bookings", "1 market demand signal"],
+  "historicalPoints": [{ "period": "2026-10", "label": "Oct 2026", "quantity": 400, "avgPrice": 30 }],
+  "forecastPoints":   [{ "period": "2026-11", "label": "Nov 2026", "quantity": 450, "isForecast": true }],
+  "totalForecastQty": 1380,
+  "meta": { "historicalMonths": 12, "nonZeroMonths": 4, "totalTransactions": 7, "demandSignalCount": 1, "baseWMA": 420, "trendSlope": 12.5 }
+}
+```
+
+### Forecast Method
+
+1. **Data aggregation**: monthly `qty + avgPrice` buckets from 4 sources over the past 12 months
+   - `Order` (status: Delivered) — full weight (actual transactions)
+   - `Booking` (status: Accepted/Completed) — full weight (confirmed demand)
+   - `BuyerRequirement` — 0.6× weight (prospective/prospected demand, avoids double-count)
+   - `Demand` model — demand level/trend signals + price range
+2. **Weighted Moving Average**: recent months get higher weight (ascending weights 1→7 over 12 slots)
+3. **OLS linear trend**: least-squares slope over monthly quantities → `INCREASING / STABLE / DECREASING`
+4. **Projection**: `WMA_base + slope × month_offset` per future month, floored at 0
+5. **Confidence**: HIGH ≥ 6 non-zero months, MEDIUM ≥ 3, LOW otherwise; score 20–95
+6. **Price**: weighted average of historical `avgPrice` ± 10 % band; falls back to Demand board price range
+
+### Data source decision log
+
+- `Order.cropName / quantity / pricePerUnit / createdAt` — primary signal
+- `Booking.cropName / quantity / pricePerUnit / createdAt` — secondary demand signal
+- `BuyerRequirement.cropName / quantity / maxPricePerKg / createdAt` — prospective signal (0.6× weight)
+- `Demand.demandQuantity / demandLevel / demandTrend / expectedPriceMin/Max` — market board signals
+- No fabricated fields; if a field is absent/zero it is simply excluded from the relevant average
+
+### UI Feature Summary
+
+- Input form: Crop Name + Forecast Period selector (1/3/6/12 months)
+- KPI cards: Demand Trend, Demand Level, Expected Price range, Total Forecast Qty
+- SVG bar chart (no external library): historical bars (agri-green) + forecast bars (light-green), dashed divider, Y-axis grid, rotated X labels, inline legend
+- Confidence bar with colour-coded tier and data-point breakdown
+- Recommendation panel with procurement advice
+- All states: initial prompt, loading skeleton, success, empty (no data), API error
+
+---
+
+## Demand Forecast — Farmer AI Centre (Phase 3)
+
+### Overview
+
+The Demand Forecast Agent is now available on both the Farmer and Buyer sides.
+The backend service and API are shared — no duplication.
+The farmer UI frames the forecast as a production/harvest planning tool.
+
+### What changed
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | `postDemandForecast`: role guard widened from `buyer-only` to `farmer` and `buyer` |
+| `frontend/src/pages/farmer/ai/FarmerDemandForecast.jsx` | **NEW** — farmer-framed demand forecast page at `/farmer/ai/demand-forecast` |
+| `frontend/src/pages/farmer/ai/AICentreDashboard.jsx` | Added Demand Forecast "Live" card linking to `/farmer/ai/demand-forecast`; added `const navigate = useNavigate()` to default export |
+| `frontend/src/components/ai/AgentPageHeader.jsx` | Added `forecast` key to `iconMap` |
+| `frontend/src/App.jsx` | Imported `FarmerDemandForecast`; added `Route path="demand-forecast"` inside farmer `ai` nest |
+
+### What was reused (no duplication)
+
+- `POST /api/ai/demand-forecast` — same endpoint, same service, same data
+- `backend/services/demandForecastService.js` — unchanged
+- `frontend/src/services/aiApi.js` → `runDemandForecast()` — unchanged
+- SVG chart logic — copied inline (no shared component needed; both pages are self-contained)
+- All Tailwind classes, `.card`, `.btn-primary`, `input-field` etc. — unchanged
+
+### Farmer UI differences vs Buyer UI
+
+| Aspect | Farmer | Buyer |
+|--------|--------|-------|
+| Back navigation | `/farmer/ai` | `/buyer/ai` |
+| Recommendation label | "Production Recommendation" | "Procurement Recommendation" |
+| Recommendation text | Farmer-framed (grow more/less, plan harvest cycle) | Buyer-framed (secure contracts, negotiate price) |
+| Price KPI label | "Expected Selling Price" | "Expected Price" |
+| Chart title | "Buyer Demand History vs Forecast" | "Historical vs Forecast Demand" |
+| CTAs | "+ Add / Plan Crop" → `/farmer/crops/add` · "View Market Demand" → `/farmer/demand` | none |
+| How-it-works panel | Farmer production focus | Procurement planning focus |
+| AgentPageHeader | Used (farmer pattern) | Not used (buyer pattern) |
+
+### Farmer workflow integration
+
+```
+Historical Data
+  → Demand Forecast Agent (/farmer/ai/demand-forecast)
+  → Farmer Production/Harvest Decision
+  → Crop (/farmer/crops/add)
+  → Marketplace / Buyer Matching
+  → Booking → Order
+```
+
+### Route added
+
+| Path | Component | Auth |
+|------|-----------|------|
+| `/farmer/ai/demand-forecast` | `FarmerDemandForecast` | `ProtectedRoute` (farmer session) |
+
+### Buyer AI Centre
+
+- Unchanged — `DemandForecastPage` at `/buyer/ai/demand-forecast` still works
+- `BuyerAICentre` dashboard still shows both agents as Live
+- No buyer routes broken
+
+---
+
+## Route Optimization (Transporter Module)
+
+### Overview
+
+Deterministic pickup/delivery route optimizer for transporters. No ML, no LLM, no external APIs.
+Uses urgency scoring + greedy nearest-neighbor sequencing based on available text location fields.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/routeOptimizationService.js` | Optimization engine — hard filter, urgency scoring, greedy sequencing, route metrics |
+| `frontend/src/pages/transporter/routes/RouteOptimization.jsx` | Route Optimization UI — request selection, capacity check, stop timeline, KPI cards, actions |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/transporterController.js` | Added `optimizeRoute` handler; imports `routeOptimizationService` |
+| `backend/routes/transporterRoutes.js` | Added `POST /api/transporter/routes/optimize`; imported `optimizeRoute` |
+| `frontend/src/services/transporterApi.js` | Added `optimizeRoute(body)` → `POST /api/transporter/routes/optimize` |
+| `frontend/src/App.jsx` | Replaced `TransporterRoutes` placeholder with `RouteOptimization`; removed unused placeholder import |
+
+### New Endpoint
+
+| Method | Path | Auth | Role |
+|--------|------|------|------|
+| `POST` | `/api/transporter/routes/optimize` | `protect` (JWT) | `transporter` only (hard-checked in controller) |
+
+#### Request body
+
+```json
+{
+  "pickupRequestIds": ["id1", "id2", "id3"],
+  "vehicleCapacity": 1000
+}
+```
+
+#### Response
+
+```json
+{
+  "success": true,
+  "route": [{ "requestId": "...", "cropName": "...", "urgency": "HIGH", "priorityScore": 85, ... }],
+  "stops": [{ "stopNumber": 1, "type": "PICKUP", "location": "...", "urgency": "HIGH", ... }],
+  "totalDistanceKm": 450,
+  "estimatedDurationMinutes": 600,
+  "totalLoadKg": 800,
+  "totalEarnings": 4250,
+  "overCapacity": false,
+  "vehicleCapacity": 1000,
+  "stopCount": 6,
+  "pickupCount": 3,
+  "rejected": [],
+  "priorityReason": "2 high-urgency pickups scheduled today — placed first in sequence.",
+  "optimizationSummary": "3 pickups sequenced across 6 stops. Total load: 800 kg..."
+}
+```
+
+### Optimization Algorithm
+
+1. **Hard filter** — only PENDING requests are plannable; others are returned in `rejected[]` with reason
+2. **Urgency scoring** — pickupDate proximity: ≤1 day = HIGH (60 pts), ≤3 days = MEDIUM (30 pts), else NORMAL (10 pts)
+3. **Composite priority score** — urgency (60%) + load ratio vs capacity (25%) + earnings normalized (15%)
+4. **Greedy nearest-neighbor** — start with highest-priority stop; each subsequent stop is chosen as the unvisited pickup location most similar to the previous delivery location (text-token overlap)
+5. **Stop list** — alternating PICKUP / DELIVERY stops with cumulative load and distance tracking
+6. **Metrics** — total distance sum of `estimatedDistanceKm` per request; duration estimated at 45 km/h assumed speed
+
+### Data sources (existing fields only — no invented data)
+
+- `PickupRequest.pickupLocation` / `deliveryLocation` — text strings used for proximity scoring
+- `PickupRequest.estimatedDistanceKm` — per-request leg distance (existing field, set at request creation)
+- `PickupRequest.pickupDate` — used for urgency calculation
+- `PickupRequest.quantity` — used for capacity check
+- `PickupRequest.estimatedEarnings` — used for earnings aggregation
+- `User.vehicleInfo.capacity` — String, auto-loaded in UI via `fetchVehicleInfo()`; parsed with `parseFloat()`
+
+### Limitation (by design)
+
+- No real GPS coordinates exist on any model — location proximity is approximated by shared text tokens (city/state names). This is disclosed in the service file and matches task requirements ("do not invent coordinates").
+- `estimatedDistanceKm` is still the placeholder heuristic set at request creation (150 km default); actual mileage awaits a real routing API integration.
+
+### Route Optimization Workflow integration
+
+```
+Order Ready for Pickup
+  → PickupRequest (PENDING)
+  → Route Optimization (/transporter/routes) ← NEW
+      Select requests → Optimize → View sequenced stops
+  → Accept request (/transporter/pickups/:id)
+  → My Trips (/transporter/trips)
+  → Pickup → In Transit → Delivered
+```

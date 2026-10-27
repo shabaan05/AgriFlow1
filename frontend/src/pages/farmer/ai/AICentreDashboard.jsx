@@ -95,6 +95,7 @@ function SkeletonAgentCard() {
 
 export default function AICentreDashboard() {
   const { summary, loading, error } = useAI()
+  const navigate = useNavigate()
 
   return (
     <div>
@@ -133,6 +134,47 @@ export default function AICentreDashboard() {
           ? [1, 2, 3, 4].map((i) => <SkeletonAgentCard key={i} />)
           : summary.agents.map((agent) => <AgentCard key={agent.id} agent={agent} />)
         }
+      </div>
+
+      {/* Demand Forecast — live agent (separate from demo agents above) */}
+      <div
+        className="card hover:shadow-md transition-all duration-200 border border-agri-green/20
+                   hover:border-agri-green/50 flex flex-col sm:flex-row gap-4 mb-8 cursor-pointer group"
+        onClick={() => navigate('/farmer/ai/demand-forecast')}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && navigate('/farmer/ai/demand-forecast')}
+      >
+        <div className="flex items-start gap-4 flex-1">
+          <div className="bg-agri-light text-agri-green p-3 rounded-2xl flex-shrink-0 group-hover:bg-green-100 transition-colors">
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-gray-900 text-base">Demand Forecast Agent</h3>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <span className="status-badge text-xs bg-green-100 text-green-700">Live</span>
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Forecast buyer demand for your crops using real order and booking data.
+              Understand demand trends and plan your planting cycles ahead of the market.
+            </p>
+          </div>
+        </div>
+        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 flex-shrink-0">
+          <div className="text-right">
+            <span className="text-2xl font-bold text-agri-green">WMA</span>
+            <span className="text-xs text-gray-400 ml-1.5">forecast</span>
+          </div>
+          <span className="text-sm font-semibold text-agri-green group-hover:underline whitespace-nowrap">
+            Open Agent →
+          </span>
+        </div>
       </div>
 
       {/* Pipeline diagram */}

@@ -6,12 +6,17 @@ const {
   getFarmerTraceability,
   getBuyerTraceability,
   getBuyerOrderTraceability,
+  getTraceabilityBlockchainStatus,
 } = require('../controllers/traceabilityController')
 
 const router = express.Router()
 
 // All routes require JWT authentication
 router.use(protect)
+
+// ── Blockchain Network Status ────────────────────────────────────────────────
+// GET /api/traceability/blockchain/status
+router.get('/blockchain/status', getTraceabilityBlockchainStatus)
 
 // ── Farmer routes ─────────────────────────────────────────────────────────────
 // GET /api/traceability            — farmer overview (all traceable crops)

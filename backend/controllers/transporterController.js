@@ -1,10 +1,11 @@
-const PickupRequest = require('../models/PickupRequest')
-const Order        = require('../models/Order')
-const User         = require('../models/User')
-const Booking      = require('../models/Booking')
-const Payment      = require('../models/Payment')
-const TransporterEarning = require('../models/TransporterEarning')
+const PickupRequest       = require('../models/PickupRequest')
+const Order               = require('../models/Order')
+const User                = require('../models/User')
+const Booking             = require('../models/Booking')
+const Payment             = require('../models/Payment')
+const TransporterEarning  = require('../models/TransporterEarning')
 const traceabilityService = require('../services/traceabilityService')
+const routeOptimizationService = require('../services/routeOptimizationService')
 
 // ── Format helper ─────────────────────────────────────────────────────────────
 function fmt(doc) {
@@ -670,6 +671,47 @@ async function updateTransporterNotifPrefs(req, res) {
   }
 }
 
+/**
+ * POST /api/transporter/routes/optimize
+ *
+ * Route Optimization: accepts a list of pickup request IDs and vehicle
+ * capacity, returns an optimized pickup/delivery sequence.
+ *
+ * Only authenticated transporters may call this endpoint.
+ */
+async function optimizeRoute(req, res) {
+  try {
+    if (req.user.role !== 'transporter') {
+      return res.status(403).json({ success: false, message: 'Access denied — transporters only' })
+    }
+
+    const { pickupRequestIds, vehicleCapacity } = req.body
+
+    if (!Array.isArray(pickupRequestIds) || pickupRequestIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'pickupRequestIds must be a non-empty array' })
+    }
+
+    // Parse vehicleCapacity — stored as String on User.vehicleInfo.capacity
+    const capKg = vehicleCapacity !== undefined && vehicleCapacity !== null
+      ? Math.max(1, parseFloat(String(vehicleCapacity)) || 1000)
+      : 1000
+
+    const result = await routeOptimizationService.optimize({
+      pickupRequestIds,
+      vehicleCapacity: capKg,
+    })
+
+    if (!result.success) {
+      return res.status(400).json(result)
+    }
+
+    return res.json(result)
+  } catch (err) {
+    console.error('[route-optimize]', err)
+    res.status(500).json({ success: false, message: 'Route optimization error', error: err.message })
+  }
+}
+
 module.exports = {
   getPickupRequests,
   getPickupRequestById,
@@ -694,4 +736,5 @@ module.exports = {
   getTransporterPaymentDetails,
   updateTransporterPaymentDetails,
   updateTransporterNotifPrefs,
+  optimizeRoute,
 }

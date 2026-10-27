@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.jsx'
+import { useTranslation } from '../../context/LanguageContext.jsx'
+
 
 const navItems = [
   {
@@ -67,14 +69,25 @@ const navItems = [
   },
 ]
 
+const labelMap = {
+  'Dashboard': 'dashboard',
+  'Crops': 'crops',
+  'Demand': 'demand',
+  'AI Centre': 'ai_centre',
+  'Bookings & Orders': 'bookings_orders',
+  'Profile': 'profile',
+}
+
 export default function FarmerSidebar({ mobileOpen, onClose }) {
   const { user, logout } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
     navigate('/')
   }
+
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -104,7 +117,8 @@ export default function FarmerSidebar({ mobileOpen, onClose }) {
             }
           >
             {item.icon}
-            <span className="flex-1">{item.label}</span>
+            <span className="flex-1">{t(labelMap[item.label] || item.label, item.label)}</span>
+
             {item.badge && (
               <span className="bg-agri-green text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
                 {item.badge}
@@ -127,7 +141,7 @@ export default function FarmerSidebar({ mobileOpen, onClose }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Settings
+          {t('profile', 'Settings')}
         </NavLink>
 
         <button
@@ -138,8 +152,9 @@ export default function FarmerSidebar({ mobileOpen, onClose }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Logout
+          {t('logout', 'Logout')}
         </button>
+
       </div>
     </div>
   )

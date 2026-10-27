@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate }               from 'react-router-dom'
 import { fetchBuyerTraceability }    from '../../../services/traceabilityApi.js'
 import PageHeader                    from '../../../components/ui/PageHeader.jsx'
+import { BlockchainNetworkBanner }   from '../../../components/common/BlockchainVerification.jsx'
+
 
 const eventLabel = {
   HARVESTED:        { icon: '🌾', label: 'Harvested'         },
@@ -66,17 +68,8 @@ export default function BuyerTraceability() {
         subtitle="Track the complete farm-to-delivery journey of your purchased crops."
       />
 
-      {/* Explainer banner */}
-      <div className="bg-gradient-to-r from-agri-dark to-agri-green rounded-2xl p-5 mb-6 flex items-start gap-4">
-        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔗</div>
-        <div>
-          <p className="text-white font-semibold text-sm">End-to-End Crop Traceability</p>
-          <p className="text-green-100 text-xs mt-0.5 leading-relaxed">
-            Every crop on AgriFlow AI has a verifiable journey from harvest to your delivery.
-            Blockchain verification will be added in a future update.
-          </p>
-        </div>
-      </div>
+      {/* Blockchain Network Status Banner */}
+      <BlockchainNetworkBanner />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-5 flex items-center justify-between">
@@ -122,10 +115,16 @@ export default function BuyerTraceability() {
                       <p className="text-xs text-gray-400 truncate">{item.variety || '—'} · {item.quantity}</p>
                     </div>
                   </div>
-                  <span className={`status-badge text-xs flex-shrink-0 ${orderStatusCls[item.orderStatus] || 'bg-gray-100 text-gray-600'}`}>
-                    {item.orderStatus}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`status-badge text-xs flex-shrink-0 ${orderStatusCls[item.orderStatus] || 'bg-gray-100 text-gray-600'}`}>
+                      {item.orderStatus}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                      ⛓️ Polygon Verified
+                    </span>
+                  </div>
                 </div>
+
 
                 {/* Info rows */}
                 <div className="space-y-1 mb-3 text-xs">

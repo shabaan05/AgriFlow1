@@ -4,6 +4,8 @@ const Booking= require('../models/Booking')
 const Payment= require('../models/Payment')
 const { getEventsByCrop, getEventsByOrder, getEventsByFarmer } = require('../services/traceabilityService')
 
+const { getBlockchainStatus } = require('../services/blockchainService')
+
 // ── The canonical event flow order ─────────────────────────────────────────────
 const EVENT_FLOW = [
   'HARVESTED',
@@ -19,6 +21,7 @@ const EVENT_FLOW = [
 // ── Format an event for the API response ─────────────────────────────────────
 function fmtEvent(e) {
   const d = e.toObject ? e.toObject() : e
+  const txHash = d.txHash || null
   return {
     id:          d._id.toString(),
     eventType:   d.eventType,
@@ -29,8 +32,11 @@ function fmtEvent(e) {
     cropId:      d.cropId?.toString(),
     orderId:     d.orderId?.toString() || null,
     bookingId:   d.bookingId?.toString() || null,
-    onChain:     d.onChain,
-    txHash:      d.txHash,
+    onChain:     Boolean(d.onChain || txHash),
+    txHash:      txHash,
+    blockNumber: d.blockNumber || null,
+    network:     'Polygon Amoy',
+    explorerUrl: txHash ? `https://amoy.polygonscan.com/tx/${txHash}` : null,
   }
 }
 
@@ -284,5 +290,24 @@ async function getBuyerOrderTraceability(req, res) {
   }
 }
 
-module.exports = { getCropTraceability, getOrderTraceability, getFarmerTraceability,
-                   getBuyerTraceability, getBuyerOrderTraceability }
+// ── GET /api/traceability/blockchain/status ──────────────────────────────────
+
+// Returns live status of Polygon Amoy blockchain connection and smart contract
+async function getTraceabilityBlockchainStatus(_req, res) {
+  try {
+    const status = await getBlockchainStatus()
+    res.json(status)
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch blockchain status', error: err.message })
+  }
+}
+
+module.exports = {
+  getCropTraceability,
+  getOrderTraceability,
+  getFarmerTraceability,
+  getBuyerTraceability,
+  getBuyerOrderTraceability,
+  getTraceabilityBlockchainStatus,
+}
+
