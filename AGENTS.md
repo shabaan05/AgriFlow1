@@ -41,6 +41,10 @@ prevention, demand forecasting, and transport optimisation.
 | Tailwind CSS | 3 |
 | React Router | 6 |
 
+**Vercel SPA deployment:** `frontend/vercel.json` contains a catch-all rewrite
+(`/(.*) → /index.html`) so direct URL access (e.g. `/farmer/login`) is handled
+by React Router instead of returning a 404. Do not remove this file.
+
 ### Backend (active)
 - Node.js + Express.js (`backend/server.js`, port `5000`)
 - MongoDB + Mongoose
