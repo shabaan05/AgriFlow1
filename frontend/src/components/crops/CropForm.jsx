@@ -9,6 +9,7 @@
  */
 import React, { useState } from 'react'
 import { CROP_CATEGORIES, QUALITY_GRADES, UNITS, CROP_STATUSES } from '../../data/cropData.js'
+import MandiPriceAdvisor from './MandiPriceAdvisor.jsx'
 
 const EMPTY_FORM = {
   name:                '',
@@ -232,6 +233,25 @@ export default function CropForm({ initialData = {}, onSubmit, onCancel, isEdit 
 
       {/* ── Pricing ── */}
       <FormSection title="Pricing">
+        <MandiPriceAdvisor
+          cropName={form.name}
+          farmLocation={form.farmLocation}
+          onApplyPrice={(exp, min) => {
+            setForm((prev) => ({
+              ...prev,
+              expectedPrice: exp,
+              minPrice: min
+            }))
+            // Clear validation errors for price fields if any were present
+            setErrors((prev) => {
+              const updated = { ...prev }
+              delete updated.expectedPrice
+              delete updated.minPrice
+              return updated
+            })
+          }}
+        />
+
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Expected Price / unit (₹)" required>
             <input

@@ -4,6 +4,8 @@ import { useCrops } from '../../../context/CropsContext.jsx'
 import CropListCard from '../../../components/crops/CropListCard.jsx'
 import PageHeader   from '../../../components/ui/PageHeader.jsx'
 import { CROP_STATUSES } from '../../../data/cropData.js'
+import MandiTickerBar   from '../../../components/mandi/MandiTickerBar.jsx'
+import MandiMarketModal from '../../../components/mandi/MandiMarketModal.jsx'
 
 // ── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, color }) {
@@ -144,10 +146,11 @@ export default function MyCrops() {
   const navigate = useNavigate()
   const { crops, loading, error, fetchCrops, deleteCrop } = useCrops()
 
-  const [search,       setSearch]       = useState('')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleting,     setDeleting]     = useState(false)
+  const [search,         setSearch]         = useState('')
+  const [statusFilter,   setStatusFilter]   = useState('All')
+  const [deleteTarget,   setDeleteTarget]   = useState(null)
+  const [deleting,       setDeleting]       = useState(false)
+  const [mandiModalOpen, setMandiModalOpen] = useState(false)
 
   const total        = crops.length
   const preHarvest   = crops.filter((c) => c.status === 'Pre-Harvest').length
@@ -184,17 +187,37 @@ export default function MyCrops() {
         title="My Crops"
         subtitle={loading ? 'Loading…' : `${total} crop${total !== 1 ? 's' : ''} listed`}
         action={
-          <button
-            onClick={() => navigate('/farmer/crops/add')}
-            className="btn-primary text-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Crop
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMandiModalOpen(true)}
+              className="bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-semibold px-3.5 py-2 rounded-xl text-sm flex items-center gap-1.5 transition-all shadow-sm"
+              title="Explore real-time APMC Mandi rates"
+            >
+              <span>🌾</span>
+              <span>Live Mandi Rates</span>
+              <span className="flex h-1.5 w-1.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600"></span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate('/farmer/crops/add')}
+              className="btn-primary text-sm flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Crop
+            </button>
+          </div>
         }
       />
+
+      {/* Live Mandi Ticker Bar */}
+      <div className="mb-4">
+        <MandiTickerBar onOpenMarketModal={() => setMandiModalOpen(true)} />
+      </div>
 
       {error && <ErrorBanner message={error} onRetry={fetchCrops} />}
 
@@ -205,6 +228,13 @@ export default function MyCrops() {
         <StatCard label="Harvest Ready" value={loading ? '—' : harvestReady} color="green"  />
         <StatCard label="Active"        value={loading ? '—' : active}       color="blue"   />
       </div>
+
+      {/* Mandi Market Modal */}
+      <MandiMarketModal
+        isOpen={mandiModalOpen}
+        onClose={() => setMandiModalOpen(false)}
+        farmerCrops={crops}
+      />
 
       {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

@@ -422,14 +422,16 @@ backend/
 │   ├── notificationRoutes.js
 │   ├── traceabilityRoutes.js
 │   ├── marketplaceRoutes.js
-│   └── requirementRoutes.js
+│   ├── requirementRoutes.js
+│   └── mandiRoutes.js
 ├── agents/                    ← demo/rule stubs, not ML
 │   ├── buyerMatchAgent.js
 │   ├── harvestPlannerAgent.js
 │   ├── shelfLifeAgent.js
 │   └── wastagePreventionAgent.js
 └── services/
-    └── traceabilityService.js ← idempotent createEvent + readers
+    ├── traceabilityService.js ← idempotent createEvent + readers
+    └── mandiService.js        ← real-time Mandi (Agmarknet) proxy, caching & price advisor
 ```
 
 Backend runs on `http://localhost:5000`. CORS is configured for `http://localhost:5173`, `https://agri-flow1.vercel.app`, and the Vercel preview URL, all with `credentials: true`.
@@ -453,7 +455,8 @@ frontend/src/services/
 ├── marketplaceApi.js    ← browse, crop, farmer profile, shortlist
 ├── requirementsApi.js
 ├── profileApi.js        ← farmer profile/farm/verification/payment/prefs
-└── traceabilityApi.js
+├── traceabilityApi.js
+└── mandiApi.js          ← real-time Mandi market rates, live ticker & benchmark advisor
 ```
 
 `VITE_API_URL` defaults to `http://localhost:5000`. JWT attached via
@@ -552,6 +555,12 @@ CRUD (`POST/GET /api/marketplace/shortlist`, `GET .../shortlist/ids`,
 
 Requirements — `protect`: `POST/GET /api/requirements`,
 `GET/PUT /api/requirements/:id`, `PUT /api/requirements/:id/cancel`
+
+Mandi Market Intelligence — **public**:
+- `GET/POST /api/mandi/prices` — filtered APMC mandi rates with ₹/kg & ₹/Qtl
+- `GET /api/mandi/ticker` — live marquee ticker rates
+- `GET /api/mandi/benchmark?commodity=...&location=...` — intelligent price advisor for CropForm
+- `GET /api/mandi/options?level=commodity|state` — dropdown options
 
 ---
 

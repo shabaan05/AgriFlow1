@@ -17,6 +17,7 @@ const marketplaceRoutes  = require('./routes/marketplaceRoutes')
 const requirementRoutes  = require('./routes/requirementRoutes')
 const buyerRoutes        = require('./routes/buyerRoutes')
 const transporterRoutes  = require('./routes/transporterRoutes')
+const mandiRoutes        = require('./routes/mandiRoutes')
 
 const app  = express()
 const PORT = process.env.PORT || 5000
@@ -49,6 +50,7 @@ app.use('/api/marketplace',   marketplaceRoutes)
 app.use('/api/requirements',  requirementRoutes)
 app.use('/api/buyers',        buyerRoutes)
 app.use('/api/transporter',   transporterRoutes)
+app.use('/api/mandi',         mandiRoutes)
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'AgriFlow API' }))

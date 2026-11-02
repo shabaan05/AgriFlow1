@@ -55,7 +55,7 @@ contract AgriTraceability {
         _;
     }
 
-    constructor() {
+    constructor() {f
         owner = msg.sender;
     }
 
