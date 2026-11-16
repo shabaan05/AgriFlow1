@@ -29,6 +29,7 @@ app.use(cors({
     'http://localhost:5173',
     'https://agriflow-lac.vercel.app',
     'https://agri-flow1.vercel.app',
+    'https://agri-flow-vert.vercel.app',
     'https://agri-flow1-bi60ktc2i-shabaansatarkar05-8846s-projects.vercel.app'
   ],
   credentials: true
