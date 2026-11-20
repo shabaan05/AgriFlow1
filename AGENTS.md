@@ -353,10 +353,10 @@ Six-agent architecture (preserve this design):
 
 | # | Agent | Purpose | Status |
 |---|--------|---------|--------|
-| 1 | Buyer Match Agent | Find and rank suitable buyers | **UI + demo API** (`backend/agents/buyerMatchAgent.js`, `GET /api/ai/buyer-matches`) |
-| 2 | Harvest & Booking Agent | Demand-linked harvest + booking | **UI + demo API** (`harvestPlannerAgent.js`, `GET /api/ai/harvest-planner`) |
-| 3 | Shelf-Life Agent | Freshness and spoilage monitoring | **UI + demo API** (`shelfLifeAgent.js`, `GET /api/ai/shelf-life`). Threshold constants exist but `run()` still returns static demo data. |
-| 4 | Wastage Prevention Agent | Reduce crop wastage | **UI + demo API** (`wastagePreventionAgent.js`, `GET /api/ai/wastage-prevention`) |
+| 1 | Buyer Match Agent | Find and rank suitable buyers | **✅ Live — real DB data** (`backend/services/farmerBuyerMatchService.js`, `GET /api/ai/buyer-matches`) |
+| 2 | Harvest & Booking Agent | Demand-linked harvest + booking | **✅ Live — real DB data** (`backend/services/harvestPlannerService.js`, `GET /api/ai/harvest-planner`) |
+| 3 | Shelf-Life Agent | Freshness and spoilage monitoring | **✅ Live — real DB data** (`backend/services/shelfLifeService.js`, `GET /api/ai/shelf-life`) |
+| 4 | Wastage Prevention Agent | Reduce crop wastage | **✅ Live — real DB data** (`backend/services/wastagePreventionService.js`, `GET /api/ai/wastage-prevention`) |
 | 5 | Demand Forecast Agent | Market demand signals | **Planned.** Buyer page is a Coming Soon placeholder. No agent module. |
 | 6 | Transport Agent | Route and pickup optimisation | **Planned.** No UI agent page, no backend module. |
 
@@ -1270,3 +1270,254 @@ Order Ready for Pickup
   → My Trips (/transporter/trips)
   → Pickup → In Transit → Delivered
 ```
+
+---
+
+## Farmer Buyer Match Agent — Live Implementation
+
+### Overview
+
+The Farmer Buyer Match Agent (`/farmer/ai/buyer-matches`) now uses real MongoDB data instead of the hardcoded demo agent. The UI is unchanged — the existing `BuyerMatchAgent.jsx` was updated to render the real response shape.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/farmerBuyerMatchService.js` | Farmer-perspective matching engine — fetches farmer's crops + active buyer requirements, scores each pair, deduplicates, returns ranked matches |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | `getBuyerMatches` now calls `farmerBuyerMatchService.findMatchesForFarmer(farmerId)` instead of the demo agent; `getAISummary` buyer-match card now reflects real match counts |
+| `frontend/src/pages/farmer/ai/BuyerMatchAgent.jsx` | Rewritten to render the real response shape — buyer name, company, location, verification, crop+quantity detail, factor breakdown bars, score ring, reasons list, meta panel, refresh button, empty/error states |
+
+### Endpoint
+
+| Method | Path | Auth | Role | Returns |
+|--------|------|------|------|---------|
+| `GET` | `/api/ai/buyer-matches` | `protect` (JWT) | `farmer` only | `{ success, isDemo:false, matches[], summary, meta }` |
+
+### Matching Algorithm
+
+**Direction:** farmer's available crops → find active buyer requirements that match.
+
+1. **Fetch** farmer's crops (`Crop.farmerId === farmerId`) filtered to available statuses (`Pre-Harvest`, `Harvest Ready`, `Harvested`) with `availableQuantityKg > 0`.
+2. **Fetch** all ACTIVE `BuyerRequirement` records whose `cropName` matches any of the farmer's crop names.
+3. **Hard filter** each `(crop, requirement)` pair:
+   - Crop name must match (case-insensitive)
+   - If `maxPricePerKg` exists: `crop.minimumAcceptablePrice ≤ maxPricePerKg`
+   - If quality grade required: crop grade tier ≥ required tier
+   - `requiredByDate` must be in the future
+   - Harvest date must be ≤ `requiredByDate`
+4. **Score** each eligible pair 0–100 using 6 weighted factors:
+
+   | Factor | Weight | Source |
+   |--------|--------|--------|
+   | Price | 25 % | `crop.expectedPricePerKg` vs `req.maxPricePerKg` |
+   | Quality | 20 % | `crop.qualityGrade` vs `req.qualityGrade` |
+   | Quantity | 20 % | `crop.availableQuantityKg` / `req.quantity` |
+   | Location | 15 % | token overlap: `crop.farmLocation` vs `req.deliveryLocation` |
+   | Date suitability | 10 % | days from harvest to `req.requiredByDate` |
+   | Buyer reliability | 10 % | `User.verification.status` + account age |
+
+5. **Deduplicate**: if the same buyer requirement matches multiple crops, keep the highest-scoring pairing.
+6. **Return** top 10 matches sorted descending by score with `reasons[]` array and `factors{}` object.
+
+### Data dependencies
+
+- `Crop.farmerId` — must be set (fixed in an earlier session)
+- `BuyerRequirement.status === 'ACTIVE'`
+- `BuyerRequirement.buyerId` → `User` (for buyer name, verification, location)
+
+### Limitations
+
+- Location proximity is text-token based (no GPS). Two crops in the same city score 100; different cities score 30.
+- Buyer reliability uses `User.verification.status` and account age — no order history signal yet.
+- The other three agent pages (Harvest Planner, Shelf-Life Monitor, Wastage Prevention) remain demo data — this change only affects Buyer Match Agent.
+
+---
+
+## Farmer Harvest Planner Agent — Live Implementation
+
+### Overview
+
+The Harvest Planner (`/farmer/ai/harvest-planner`) now uses real MongoDB data. The existing `HarvestPlanner.jsx` UI was updated to remove the DemoBanner, change the badge to "Live", and render the real response shape including reasons, shortfall warnings, and rule labels.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/harvestPlannerService.js` | Rule-based harvest planning engine — per-crop analysis using Crop, Booking, Order, Demand, BuyerRequirement |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | `getHarvestPlan` now calls `harvestPlannerService.planHarvest(farmerId)` with farmer role guard; `getAISummary` harvest-planner card uses real counts |
+| `frontend/src/pages/farmer/ai/HarvestPlanner.jsx` | Removed DemoBanner; "Live" badge; renders `rule`, `reasons[]`, `qtyShortfall`, `confirmedQty`; added refresh, empty state, expandable reasons |
+
+### Endpoint
+
+| Method | Path | Auth | Role | Returns |
+|--------|------|------|------|---------|
+| `GET` | `/api/ai/harvest-planner` | `protect` (JWT) | `farmer` only | `{ success, isDemo:false, recommendations[], summary, meta }` |
+
+### Decision Rules (priority order)
+
+| Rule | Condition | Urgency |
+|------|-----------|---------|
+| `ALREADY_HARVESTED` | Status is `Harvested` or `Pickup Scheduled` | Low |
+| `INSUFFICIENT_DATA` | No harvest date, no bookings, no demand | Low |
+| `HARVEST_NOW` | Booking delivery ≤ 7 days OR harvest date ≤ 3 days away | High |
+| `HARVEST_SOON` | Harvest date ≤ 14 days AND (confirmed bookings OR high demand) | Medium |
+| `WAIT` | >14 days until harvest, no booking pressure | Low |
+
+### Data sources
+
+- `Crop.expectedHarvestDate`, `availableQuantityKg`, `status`, `expectedShelfLife`, `farmerId`
+- `Booking.requestedDeliveryDate`, `status` (Pending/Accepted), `quantity` — linked by `farmer` + `crop`
+- `Order.scheduledPickupDate` — for earliest pickup date signal
+- `Demand.demandLevel`, `demandTrend` — market board signal by crop name
+- `BuyerRequirement` — ACTIVE count per crop name (demand proxy)
+
+### Quantity shortfall detection
+
+If `confirmedQty` (sum of Pending/Accepted booking quantities) > `availableQuantityKg`, the UI shows a warning badge. No automatic action is taken — farmer decides.
+
+### Limitations
+
+- Weather forecasts, transport lead times, external price signals not available (no external APIs).
+- Bookings are linked to crops via `Booking.crop` ObjectId — only works when `Booking.crop` is populated (existing booking workflow sets this).
+- Shelf-life is a static field (`expectedShelfLife` days) — not dynamically computed from actual harvest time.
+
+---
+
+## Farmer Shelf-Life Monitor Agent — Live Implementation
+
+### Overview
+
+The Shelf-Life Monitor (`/farmer/ai/shelf-life`) now uses real MongoDB data. The existing UI was updated to remove DemoBanner, add `Critical` risk colour, show expiry date, disclaimer, and a refresh button.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/shelfLifeService.js` | Rule-based shelf-life calculation — reference tables, risk classification, recommendations |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | `getShelfLife` calls `shelfLifeService.monitorShelfLife(farmerId)` with farmer role guard; `getAISummary` shelf-life card uses real counts; unused `sl` demo agent call removed |
+| `frontend/src/pages/farmer/ai/ShelfLifeMonitor.jsx` | Removed DemoBanner; "Live" badge; added `Critical` risk colour, expiry date, source label, disclaimer, refresh button, empty state |
+
+### Endpoint
+
+| Method | Path | Auth | Role | Returns |
+|--------|------|------|------|---------|
+| `GET` | `/api/ai/shelf-life` | `protect` (JWT) | `farmer` only | `{ success, isDemo:false, items[], summary, meta }` |
+
+### Shelf-life source priority (per crop)
+
+1. `crop.expectedShelfLife > 0` — farmer's own estimate (highest trust)
+2. `CROP_NAME_SHELF_LIFE[name]` — 50+ common Indian crop names with industry-typical ambient storage values
+3. `CATEGORY_SHELF_LIFE[category]` — per-category fallback: Vegetables 7d, Fruits 7d, Grains 270d, Pulses 150d, Spices 270d, Oilseeds 120d, Other 30d
+4. `null` → `INSUFFICIENT_DATA` with guidance message
+
+### Risk thresholds (% of estimated total shelf life remaining)
+
+| Threshold | Freshness Status | Risk Level |
+|-----------|-----------------|------------|
+| > 50 % remaining | Fresh | Low |
+| 25–50 % | Attention | Medium |
+| 10–25 % | Critical | High |
+| ≤ 10 % or ≤ 0 days | Critical | Critical |
+
+### Clock start rule
+
+- Shelf-life clock starts from `expectedHarvestDate` **only** when `crop.status` is `Harvested`, `Pickup Scheduled`, or `Delivered`.
+- Pre-harvest crops (`Pre-Harvest`, `Harvest Ready`, `Booked`) display planned shelf life without elapsed time.
+
+### Disclaimer (displayed in UI)
+
+> "Shelf-life estimates are planning aids only, not food safety assessments."
+> "Actual shelf life depends on storage conditions, temperature and handling."
+
+### Limitations
+
+- Uses `expectedHarvestDate` as harvest start date — this is a planned date, not an actual harvest timestamp. If the crop was harvested earlier or later, the estimate is off by that delta.
+- No IoT/temperature sensor integration.
+- Variety-specific decay curves not implemented (a single reference per crop name is used).
+- `CROP_NAME_SHELF_LIFE` covers ~50 common Indian crops. Unsupported crop names fall back to category reference.
+
+---
+
+## Farmer Wastage Prevention Agent — Live Implementation
+
+### Overview
+
+The Wastage Prevention Agent (`/farmer/ai/wastage-prevention`) now uses real MongoDB data. The existing UI was updated to remove DemoBanner, add `Critical` risk colour, show shelf-life remaining, disclaimer, and refresh button.
+
+All four Farmer AI Centre agents now use real database data. `getAISummary` has been fully updated — `isDemo: false`.
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/wastagePreventionService.js` | Wastage risk engine — reuses `shelfLifeService.monitorShelfLife()`, adds booking commitment analysis, risk classification, revenue loss estimation |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `backend/controllers/aiController.js` | `getWastagePrevention` calls `wastagePreventionService.detectWastageRisks(farmerId)` with farmer role guard; `getAISummary` wastage-prevention card uses real counts; `isDemo` set to `false`; last demo agent call (`wp`) removed |
+| `frontend/src/pages/farmer/ai/WastagePrevention.jsx` | Removed DemoBanner; "Live"/"Alert" badge; added `Critical` risk config; shelf-life remaining shown; disclaimer shown; refresh + empty state; `potentialRevenueLoss` now uses real calculation |
+
+### Endpoint
+
+| Method | Path | Auth | Role | Returns |
+|--------|------|------|------|---------|
+| `GET` | `/api/ai/wastage-prevention` | `protect` (JWT) | `farmer` only | `{ success, isDemo:false, alerts[], summary, meta }` |
+
+### Risk Detection Rules
+
+The service calls `shelfLifeService.monitorShelfLife(farmerId)` to get shelf-life data, then loads `Booking` records to determine unsold quantity.
+
+| Condition | Risk Level |
+|-----------|-----------|
+| Harvested + unsold qty > 0 + ≤ 3 days remaining | Critical |
+| Harvested + unsold qty > 0 + ≤ 7 days remaining | High |
+| Harvested + unsold qty > 0 + ≤ 21 days remaining | Medium |
+| Pre-harvest + no buyer + short shelf-life crop (≤ 7 days) | Medium (planning) |
+| Fully booked OR ample shelf life | Low (not shown in alerts) |
+
+**Unsold quantity** = `availableQuantityKg` − sum of Pending/Accepted booking quantities for that crop.
+
+### Revenue Loss Estimate
+
+`potentialRevenueLoss = potentialWastageKg × crop.expectedPricePerKg`
+
+Labelled as an estimate. Shown as `—` when price data is unavailable.
+
+### Service reuse
+
+`wastagePreventionService` calls `shelfLifeService.monitorShelfLife()` directly (no duplicate DB queries for crops). Only one additional query is made for bookings.
+
+### Limitations
+
+- Same shelf-life estimation limitations as Shelf-Life Monitor apply.
+- Revenue loss estimate uses `expectedPricePerKg` — actual mandi price may differ.
+- Crops with `INSUFFICIENT_DATA` shelf-life status are silently excluded from wastage alerts.
+- Low-risk crops are filtered out of the alerts list (shown in summary counts but not as cards).
+
+### Farmer AI Centre — All 4 Agents Now Live
+
+| Agent | Status |
+|-------|--------|
+| Buyer Match Agent | ✅ Real DB data |
+| Harvest Planner | ✅ Real DB data |
+| Shelf-Life Monitor | ✅ Real DB data |
+| Wastage Prevention | ✅ Real DB data |
+
+`GET /api/ai/summary` now returns `isDemo: false` and all 4 card metrics reflect real database state.

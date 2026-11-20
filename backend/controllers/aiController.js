@@ -1,67 +1,131 @@
-const buyerMatchAgent         = require('../agents/buyerMatchAgent')
-const harvestPlannerAgent     = require('../agents/harvestPlannerAgent')
-const shelfLifeAgent          = require('../agents/shelfLifeAgent')
-const wastagePreventionAgent  = require('../agents/wastagePreventionAgent')
-const buyerMatchService       = require('../services/buyerMatchService')
-const demandForecastService   = require('../services/demandForecastService')
+const buyerMatchAgent           = require('../agents/buyerMatchAgent')
+const harvestPlannerAgent       = require('../agents/harvestPlannerAgent')
+const shelfLifeAgent            = require('../agents/shelfLifeAgent')
+const wastagePreventionAgent    = require('../agents/wastagePreventionAgent')
+const buyerMatchService         = require('../services/buyerMatchService')
+const demandForecastService     = require('../services/demandForecastService')
+const farmerBuyerMatchService   = require('../services/farmerBuyerMatchService')
+const harvestPlannerService     = require('../services/harvestPlannerService')
+const shelfLifeService          = require('../services/shelfLifeService')
+const wastagePreventionService  = require('../services/wastagePreventionService')
 
 /**
  * GET /api/ai/summary
  * Returns a summary card for each agent — used by the AI Centre dashboard.
+ * All 4 agents now use real database data (no demo data).
  */
 async function getAISummary(req, res) {
   try {
-    const farmerId = req.user?.id || 'demo'
-    const [bm, hp, sl, wp] = [
-      buyerMatchAgent.run(farmerId),
-      harvestPlannerAgent.run(farmerId),
-      shelfLifeAgent.run(farmerId),
-      wastagePreventionAgent.run(farmerId),
-    ]
+    const farmerId = req.user?.id || req.user?._id?.toString()
+
+    // Real buyer match data
+    let bmSummary = { totalMatches: 0, highScoreMatches: 0, topCrop: null }
+    let bmInsight = 'No matching buyer requirements found for your crops'
+    try {
+      const bmResult = await farmerBuyerMatchService.findMatchesForFarmer(farmerId)
+      if (bmResult.success && bmResult.summary) {
+        bmSummary = bmResult.summary
+        if (bmSummary.totalMatches > 0) {
+          bmInsight = `${bmSummary.totalMatches} buyer match${bmSummary.totalMatches > 1 ? 'es' : ''} found for your crops`
+        }
+      }
+    } catch (_) { /* fall back silently */ }
+
+    // Real harvest planner data
+    let hpSummary = { upcomingHarvests: 0, urgentHarvests: 0, nextHarvestDate: null }
+    let hpInsight = 'No upcoming harvests found'
+    try {
+      const hpResult = await harvestPlannerService.planHarvest(farmerId)
+      if (hpResult.success && hpResult.summary) {
+        hpSummary = hpResult.summary
+        hpInsight = hpSummary.urgentHarvests > 0
+          ? `${hpSummary.urgentHarvests} urgent harvest${hpSummary.urgentHarvests !== 1 ? 's' : ''} need attention`
+          : hpSummary.upcomingHarvests > 0
+            ? `${hpSummary.upcomingHarvests} upcoming harvest${hpSummary.upcomingHarvests !== 1 ? 's' : ''} scheduled`
+            : 'No upcoming harvests found'
+      }
+    } catch (_) { /* fall back silently */ }
+
+    // Real shelf-life data
+    let slSummary = { totalMonitored: 0, fresh: 0, attention: 0, critical: 0 }
+    let slInsight = 'No harvested crops to monitor'
+    let slStatus  = 'active'
+    try {
+      const slResult = await shelfLifeService.monitorShelfLife(farmerId)
+      if (slResult.success && slResult.summary) {
+        slSummary = slResult.summary
+        if (slSummary.critical > 0) {
+          slInsight = `${slSummary.critical} crop${slSummary.critical > 1 ? 's' : ''} at critical freshness risk`
+          slStatus  = 'alert'
+        } else if (slSummary.attention > 0) {
+          slInsight = `${slSummary.attention} crop${slSummary.attention > 1 ? 's' : ''} need attention`
+        } else if (slSummary.totalMonitored > 0) {
+          slInsight = `All ${slSummary.totalMonitored} monitored crop${slSummary.totalMonitored > 1 ? 's' : ''} are Fresh or stable`
+        }
+      }
+    } catch (_) { /* fall back silently */ }
+
+    // Real wastage prevention data
+    let wpSummary = { atRiskCrops: 0, potentialWastageKg: 0, potentialRevenueLoss: '₹0' }
+    let wpInsight = 'No crops at risk of wastage'
+    let wpStatus  = 'active'
+    try {
+      const wpResult = await wastagePreventionService.detectWastageRisks(farmerId)
+      if (wpResult.success && wpResult.summary) {
+        wpSummary = wpResult.summary
+        if (wpSummary.atRiskCrops > 0) {
+          wpInsight = `${wpSummary.atRiskCrops} crop${wpSummary.atRiskCrops > 1 ? 's' : ''} at risk — potential loss ${wpSummary.potentialRevenueLoss}`
+          wpStatus  = 'alert'
+        }
+      }
+    } catch (_) { /* fall back silently */ }
+
     res.json({
-      isDemo: true,
+      isDemo: false,  // all 4 agents now use real data
       agents: [
         {
           id:          'buyer-match',
           name:        'Buyer Match Agent',
           icon:        'match',
           status:      'active',
-          insight:     `${bm.summary.totalMatches} buyer matches found for your crops`,
-          metric:      bm.summary.totalMatches,
+          insight:     bmInsight,
+          metric:      bmSummary.totalMatches,
           metricLabel: 'matches',
           route:       '/farmer/ai/buyer-matches',
+          isDemo:      false,
         },
         {
           id:          'harvest-planner',
           name:        'Harvest Planner',
           icon:        'harvest',
-          status:      'active',
-          insight:     `${hp.summary.urgentHarvests} urgent harvest${hp.summary.urgentHarvests !== 1 ? 's' : ''} this week`,
-          metric:      hp.summary.upcomingHarvests,
+          status:      hpSummary.urgentHarvests > 0 ? 'alert' : 'active',
+          insight:     hpInsight,
+          metric:      hpSummary.upcomingHarvests,
           metricLabel: 'upcoming',
           route:       '/farmer/ai/harvest-planner',
+          isDemo:      false,
         },
         {
           id:          'shelf-life',
           name:        'Shelf-Life Monitor',
           icon:        'shelf',
-          status:      sl.summary.critical > 0 ? 'alert' : 'active',
-          insight:     sl.summary.critical > 0
-            ? `${sl.summary.critical} crop(s) at critical freshness risk`
-            : `All ${sl.summary.totalMonitored} monitored crops are Fresh or stable`,
-          metric:      sl.summary.critical,
+          status:      slStatus,
+          insight:     slInsight,
+          metric:      slSummary.critical,
           metricLabel: 'critical',
           route:       '/farmer/ai/shelf-life',
+          isDemo:      false,
         },
         {
           id:          'wastage-prevention',
           name:        'Wastage Prevention',
           icon:        'wastage',
-          status:      wp.summary.atRiskCrops > 0 ? 'alert' : 'active',
-          insight:     `${wp.summary.atRiskCrops} crop${wp.summary.atRiskCrops !== 1 ? 's' : ''} at risk — potential loss ${wp.summary.potentialRevenueLoss}`,
-          metric:      wp.summary.atRiskCrops,
+          status:      wpStatus,
+          insight:     wpInsight,
+          metric:      wpSummary.atRiskCrops,
           metricLabel: 'at risk',
           route:       '/farmer/ai/wastage-prevention',
+          isDemo:      false,
         },
       ],
     })
@@ -70,37 +134,64 @@ async function getAISummary(req, res) {
   }
 }
 
-/** GET /api/ai/buyer-matches */
+/**
+ * GET /api/ai/buyer-matches
+ * Returns real buyer match results for the authenticated farmer.
+ * No longer uses the demo agent.
+ */
 async function getBuyerMatches(req, res) {
   try {
-    res.json(buyerMatchAgent.run(req.user?.id || 'demo'))
+    // Allow farmers only
+    if (req.user.role !== 'farmer') {
+      return res.status(403).json({ success: false, message: 'Access denied — farmers only' })
+    }
+
+    const farmerId = req.user._id?.toString() || req.user.id
+    const result   = await farmerBuyerMatchService.findMatchesForFarmer(farmerId)
+
+    return res.json(result)
   } catch (err) {
     res.status(500).json({ message: 'Buyer Match Agent error', error: err.message })
   }
 }
 
-/** GET /api/ai/harvest-planner */
+/** GET /api/ai/harvest-planner — real data */
 async function getHarvestPlan(req, res) {
   try {
-    res.json(harvestPlannerAgent.run(req.user?.id || 'demo'))
+    if (req.user.role !== 'farmer') {
+      return res.status(403).json({ success: false, message: 'Access denied — farmers only' })
+    }
+    const farmerId = req.user._id?.toString() || req.user.id
+    const result   = await harvestPlannerService.planHarvest(farmerId)
+    return res.json(result)
   } catch (err) {
     res.status(500).json({ message: 'Harvest Planner Agent error', error: err.message })
   }
 }
 
-/** GET /api/ai/shelf-life */
+/** GET /api/ai/shelf-life — real data */
 async function getShelfLife(req, res) {
   try {
-    res.json(shelfLifeAgent.run(req.user?.id || 'demo'))
+    if (req.user.role !== 'farmer') {
+      return res.status(403).json({ success: false, message: 'Access denied — farmers only' })
+    }
+    const farmerId = req.user._id?.toString() || req.user.id
+    const result   = await shelfLifeService.monitorShelfLife(farmerId)
+    return res.json(result)
   } catch (err) {
     res.status(500).json({ message: 'Shelf-Life Agent error', error: err.message })
   }
 }
 
-/** GET /api/ai/wastage-prevention */
+/** GET /api/ai/wastage-prevention — real data */
 async function getWastagePrevention(req, res) {
   try {
-    res.json(wastagePreventionAgent.run(req.user?.id || 'demo'))
+    if (req.user.role !== 'farmer') {
+      return res.status(403).json({ success: false, message: 'Access denied — farmers only' })
+    }
+    const farmerId = req.user._id?.toString() || req.user.id
+    const result   = await wastagePreventionService.detectWastageRisks(farmerId)
+    return res.json(result)
   } catch (err) {
     res.status(500).json({ message: 'Wastage Prevention Agent error', error: err.message })
   }
