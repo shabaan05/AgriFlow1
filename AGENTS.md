@@ -286,7 +286,7 @@ flow as Crop Details, `POST /api/bookings`). No extra booking form or API.
 1. Dashboard → `/farmer/dashboard`
 2. Crops → `/farmer/crops`
 3. Demand → `/farmer/demand`
-4. AI Centre → `/farmer/ai`
+4. Decision Support → `/farmer/ai`
 5. Bookings & Orders → `/farmer/orders`
 6. Profile → `/farmer/profile`
 
@@ -302,7 +302,7 @@ Do not change without explicit request.
 1. Dashboard → `/buyer/dashboard`
 2. Marketplace → Browse `/buyer/marketplace`, Shortlisted `/buyer/marketplace/shortlisted`
 3. Requirements → My Requirements `/buyer/requirements`, Create `/buyer/requirements/create`
-4. AI Centre → Buyer Match `/buyer/ai/buyer-match`, Demand Forecast `/buyer/ai/demand-forecast` (both Live)
+4. Decision Support → Buyer Match `/buyer/ai`, Demand Forecast `/buyer/ai/demand-forecast` (both Live)
 5. Bookings & Orders → Bookings, Orders, Delivery Tracking (`/buyer/delivery` list → `/buyer/delivery/:id`), Payments, Traceability (placeholder)
 6. Profile → Personal / Business, Verification, Payment Details, Notifications, Settings (all placeholders)
 
