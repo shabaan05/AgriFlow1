@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ProfileProvider, useProfile } from '../../context/ProfileContext.jsx'
 import { useAuth } from '../../hooks/useAuth.jsx'
+import { useTranslation } from '../../context/LanguageContext.jsx'
 import { changePassword as apiChangePassword } from '../../services/profileApi.js'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 
@@ -41,29 +42,24 @@ function Feedback({ type, message }) {
 }
 
 function SaveButton({ loading, label }) {
+  const { t } = useTranslation()
   return (
-    <button
-      type="submit"
-      disabled={loading}
-      className="btn-primary text-sm flex items-center gap-2 disabled:opacity-60"
-    >
+    <button type="submit" disabled={loading}
+      className="btn-primary text-sm flex items-center gap-2 disabled:opacity-60">
       {loading ? (
-        <>
-          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-          </svg>
-          Saving…
-        </>
-      ) : (label || 'Save Changes')}
+        <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>{t('saving_btn','Saving…')}</>
+      ) : (label || t('save_changes_btn','Save Changes'))}
     </button>
   )
 }
 
-// ── 1. Personal Info ──────────────────────────────────────────────────────────
 function PersonalTab() {
   const { profile, saveProfile } = useProfile()
   const { updateUser }           = useAuth()
+  const { t } = useTranslation()
   const [form, setForm]           = useState({
     name: profile?.name || '', phone: profile?.phone || '', avatar: profile?.avatar || '',
   })
@@ -76,8 +72,8 @@ function PersonalTab() {
     setLoading(true)
     try {
       const updated = await saveProfile(form)
-      updateUser(updated) // update header + auth context
-      setFeedback('Profile updated successfully.')
+      updateUser(updated)
+      setFeedback(t('profile_updated','Profile updated successfully.'))
       setTimeout(() => setFeedback(''), 4000)
     } catch (err) {
       setFeedback(err.message)
@@ -90,33 +86,27 @@ function PersonalTab() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl">
-      <Feedback type={feedback.includes('success') ? 'success' : 'error'} message={feedback} />
-
-      {/* Avatar */}
+      <Feedback type={feedback.includes(t('profile_updated','Profile updated')) ? 'success' : 'error'} message={feedback} />
       <div className="card mb-5 flex items-center gap-5">
-        <div className="w-16 h-16 bg-agri-green rounded-2xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-          {initials}
-        </div>
+        <div className="w-16 h-16 bg-agri-green rounded-2xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">{initials}</div>
         <div>
           <p className="font-semibold text-gray-900">{profile.name}</p>
           <p className="text-sm text-gray-400">{profile.email}</p>
-          <span className="status-badge bg-green-100 text-green-800 mt-1 text-xs">Farmer</span>
+          <span className="status-badge bg-green-100 text-green-800 mt-1 text-xs">{t('farmer','Farmer')}</span>
         </div>
       </div>
-
-      {/* Form */}
       <div className="card space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('full_name_label','Full Name *')}</label>
           <input type="text" className="input-field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('email_label','Email')}</label>
           <input type="email" className="input-field bg-gray-50" value={profile.email} disabled />
-          <p className="text-xs text-gray-400 mt-1">Email cannot be changed.</p>
+          <p className="text-xs text-gray-400 mt-1">{t('email_cannot_change','Email cannot be changed.')}</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('phone_label','Phone')}</label>
           <input type="tel" className="input-field" placeholder="+91 98765 43210" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         </div>
         <div className="pt-2"><SaveButton loading={loading} /></div>
@@ -430,6 +420,7 @@ function NotifTab() {
 function SettingsTab() {
   const { profile, saveNotifPrefs } = useProfile()
   const { logout }                  = useAuth()
+  const { t } = useTranslation()
   const [pwForm, setPwForm]         = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading]   = useState(false)
   const [pwFeedback, setPwFeedback] = useState('')
@@ -441,13 +432,13 @@ function SettingsTab() {
     e.preventDefault()
     setPwFeedback('')
     if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwFeedback('New passwords do not match.')
+      setPwFeedback(t('passwords_not_match','New passwords do not match.'))
       return
     }
     setPwLoading(true)
     try {
       await apiChangePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword })
-      setPwFeedback('Password changed successfully.')
+      setPwFeedback(t('password_changed','Password changed successfully.'))
       setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setTimeout(() => setPwFeedback(''), 4000)
     } catch (err) {
@@ -455,7 +446,6 @@ function SettingsTab() {
     } finally { setPwLoading(false) }
   }
 
-  // Notification prefs
   const prefsDefaults = { emailBookings: true, emailOrders: true, emailPayments: true, pushBookings: true, pushOrders: true, pushPayments: true }
   const currentPrefs  = prefs || profile?.notificationPrefs || prefsDefaults
 
@@ -463,12 +453,9 @@ function SettingsTab() {
     return (
       <label className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0 cursor-pointer">
         <span className="text-sm text-gray-700">{label}</span>
-        <input
-          type="checkbox"
-          checked={currentPrefs[field] ?? true}
+        <input type="checkbox" checked={currentPrefs[field] ?? true}
           onChange={(e) => setPrefs({ ...currentPrefs, [field]: e.target.checked })}
-          className="w-5 h-5 rounded-lg border-gray-300 text-agri-green focus:ring-agri-green/30 cursor-pointer"
-        />
+          className="w-5 h-5 rounded-lg border-gray-300 text-agri-green focus:ring-agri-green/30 cursor-pointer" />
       </label>
     )
   }
@@ -478,7 +465,7 @@ function SettingsTab() {
     setPrefsFeedback('')
     try {
       await saveNotifPrefs(prefs || currentPrefs)
-      setPrefsFeedback('Notification preferences saved.')
+      setPrefsFeedback(t('preferences_saved','Notification preferences saved.'))
       setTimeout(() => setPrefsFeedback(''), 4000)
     } catch (err) {
       setPrefsFeedback(err.message)
@@ -487,55 +474,50 @@ function SettingsTab() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      {/* Change password */}
       <form onSubmit={handlePasswordChange} className="card space-y-4">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide pb-3 border-b border-gray-100">Change Password</h3>
-        <Feedback type={pwFeedback.includes('success') ? 'success' : 'error'} message={pwFeedback} />
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide pb-3 border-b border-gray-100">{t('change_password_title','Change Password')}</h3>
+        <Feedback type={pwFeedback.includes(t('password_changed','Password changed')) ? 'success' : 'error'} message={pwFeedback} />
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('current_password_label','Current Password *')}</label>
           <input type="password" className="input-field" required value={pwForm.currentPassword} onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('new_password_label','New Password *')}</label>
             <input type="password" className="input-field" required minLength={6} value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('confirm_password_label','Confirm New Password *')}</label>
             <input type="password" className="input-field" required value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} />
           </div>
         </div>
-        <div className="pt-2"><SaveButton loading={pwLoading} label="Change Password" /></div>
+        <div className="pt-2"><SaveButton loading={pwLoading} label={t('change_password_btn','Change Password')} /></div>
       </form>
 
-      {/* Notification preferences */}
       <div className="card space-y-2">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide pb-3 border-b border-gray-100 mb-3">Notification Preferences</h3>
-        <Feedback type={prefsFeedback.includes('saved') ? 'success' : 'error'} message={prefsFeedback} />
-        <Toggle field="emailBookings" label="Email — Booking requests" />
-        <Toggle field="emailOrders"   label="Email — Order updates" />
-        <Toggle field="emailPayments"  label="Email — Payment notifications" />
-        <Toggle field="pushBookings"   label="Push — Booking requests" />
-        <Toggle field="pushOrders"     label="Push — Order updates" />
-        <Toggle field="pushPayments"   label="Push — Payment notifications" />
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide pb-3 border-b border-gray-100 mb-3">{t('notif_prefs_title','Notification Preferences')}</h3>
+        <Feedback type={prefsFeedback.includes(t('preferences_saved','saved')) ? 'success' : 'error'} message={prefsFeedback} />
+        <Toggle field="emailBookings" label={t('notif_email_bookings','Email — Booking requests')} />
+        <Toggle field="emailOrders"   label={t('notif_email_orders','Email — Order updates')} />
+        <Toggle field="emailPayments"  label={t('notif_email_payments','Email — Payment notifications')} />
+        <Toggle field="pushBookings"   label={t('notif_push_bookings','Push — Booking requests')} />
+        <Toggle field="pushOrders"     label={t('notif_push_orders','Push — Order updates')} />
+        <Toggle field="pushPayments"   label={t('notif_push_payments','Push — Payment notifications')} />
         <div className="pt-3">
           <button onClick={handleSavePrefs} disabled={prefsLoading} className="btn-outline text-sm disabled:opacity-60">
-            {prefsLoading ? 'Saving…' : 'Save Preferences'}
+            {prefsLoading ? t('saving_btn','Saving…') : t('save_preferences_btn','Save Preferences')}
           </button>
         </div>
       </div>
 
-      {/* Logout */}
       <div className="card">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 pb-3 border-b border-gray-100">Account</h3>
-        <button
-          onClick={logout}
-          className="px-6 py-2.5 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center gap-2"
-        >
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 pb-3 border-b border-gray-100">{t('account_title','Account')}</h3>
+        <button onClick={logout}
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Logout
+          {t('logout','Logout')}
         </button>
       </div>
     </div>
@@ -546,10 +528,20 @@ function SettingsTab() {
 function ProfileShell() {
   const [tab, setTab]   = useState('personal')
   const { loading, error } = useProfile()
+  const { t } = useTranslation()
+
+  const TABS = [
+    { key: 'personal',  label: t('personal_tab','Personal') },
+    { key: 'farm',      label: t('farm_tab','Farm Info') },
+    { key: 'verify',    label: t('verify_tab','Verification') },
+    { key: 'payment',   label: t('payment_tab','Payment') },
+    { key: 'notif',     label: t('notif_tab','Notifications') },
+    { key: 'settings',  label: t('settings_tab','Settings') },
+  ]
 
   return (
     <div>
-      <PageHeader title="Profile" subtitle="Manage your account, farm, verification, and settings." />
+      <PageHeader title={t('profile_title','Profile')} subtitle={t('profile_subtitle','Manage your account, farm, verification, and settings.')} />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-5">{error}</div>
@@ -557,16 +549,16 @@ function ProfileShell() {
 
       {/* Tab bar */}
       <div className="flex gap-1 bg-gray-100 rounded-2xl p-1 mb-6 flex-wrap">
-        {TABS.map((t) => (
+        {TABS.map((tabItem) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tabItem.key}
+            onClick={() => setTab(tabItem.key)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
-              ${tab === t.key
+              ${tab === tabItem.key
                 ? 'bg-white text-agri-green shadow-sm font-semibold'
                 : 'text-gray-500 hover:text-gray-700'}`}
           >
-            {t.label}
+            {tabItem.label}
           </button>
         ))}
       </div>

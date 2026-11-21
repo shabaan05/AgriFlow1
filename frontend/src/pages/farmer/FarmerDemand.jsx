@@ -1,21 +1,19 @@
 import React from 'react'
-import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { DemandProvider } from '../../context/DemandContext.jsx'
-
-const TABS = [
-  { to: '/farmer/demand',              label: 'Market Demand',      end: true  },
-  { to: '/farmer/demand/buyers',       label: 'Buyer Requirements', end: false },
-  { to: '/farmer/demand/opportunities',label: 'Opportunities',      end: false },
-]
+import { useTranslation } from '../../context/LanguageContext.jsx'
 
 export default function FarmerDemand() {
-  const { pathname } = useLocation()
+  const { t } = useTranslation()
+  const TABS = [
+    { to: '/farmer/demand',               label: t('market_demand_tab','Market Demand'),          end: true  },
+    { to: '/farmer/demand/buyers',        label: t('buyer_requirements_tab','Buyer Requirements'), end: false },
+    { to: '/farmer/demand/opportunities', label: t('opportunities_tab','Opportunities'),           end: false },
+  ]
 
-  // Redirect /farmer/demand base to itself (Outlet handles the index)
   return (
     <DemandProvider>
       <div>
-        {/* Tab bar */}
         <div className="flex gap-1 bg-gray-100 rounded-2xl p-1 mb-6 w-fit flex-wrap">
           {TABS.map((tab) => (
             <NavLink
@@ -33,8 +31,6 @@ export default function FarmerDemand() {
             </NavLink>
           ))}
         </div>
-
-        {/* Page content */}
         <Outlet />
       </div>
     </DemandProvider>

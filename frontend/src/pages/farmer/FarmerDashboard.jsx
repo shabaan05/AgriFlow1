@@ -3,22 +3,24 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { useOrders } from '../../context/OrdersContext.jsx'
 import { fetchCrops } from '../../services/cropApi.js'
+import { useTranslation } from '../../context/LanguageContext.jsx'
 import KPICard    from '../../components/farmer/KPICard.jsx'
 import CropCard   from '../../components/farmer/CropCard.jsx'
 import OrderRow   from '../../components/farmer/OrderRow.jsx'
 
 /* ─── Greeting ──────────────────────────────────────────────────────────── */
 function Greeting({ name }) {
+  const { t } = useTranslation()
   const hour = new Date().getHours()
-  const time = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
-  const firstName = name ? name.split(' ')[0] : 'Farmer'
+  const timeKey = hour < 12 ? 'good_morning' : hour < 17 ? 'good_afternoon' : 'good_evening'
+  const firstName = name ? name.split(' ')[0] : t('farmer', 'Farmer')
   return (
     <div className="mb-8">
       <h1 className="text-2xl font-bold text-gray-900">
-        Good {time}, {firstName} 👋
+        {t(timeKey)}, {firstName} 👋
       </h1>
       <p className="text-gray-500 mt-1 text-sm">
-        Here's what's happening with your farm today.
+        {t('dashboard_subtitle', "Here's what's happening with your farm today.")}
       </p>
     </div>
   )
@@ -26,6 +28,7 @@ function Greeting({ name }) {
 
 /* ─── AI Insights Panel ─────────────────────────────────────────────────── */
 function AIInsights({ onNavigate }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-gradient-to-br from-agri-dark to-agri-green rounded-2xl p-6 text-white">
       <div className="flex items-start justify-between gap-4">
@@ -37,12 +40,12 @@ function AIInsights({ onNavigate }) {
             </svg>
           </div>
           <div>
-            <p className="text-xs font-semibold text-green-200 uppercase tracking-wider">AI Farm Advisor</p>
-            <p className="text-sm font-bold">AgriFlow Intelligence</p>
+            <p className="text-xs font-semibold text-green-200 uppercase tracking-wider">{t('ai_advisor_label', 'AI Farm Advisor')}</p>
+            <p className="text-sm font-bold">{t('ai_advisor_title', 'AgriFlow Intelligence')}</p>
           </div>
         </div>
         <span className="bg-white/20 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0">
-          Preview
+          {t('ai_preview_badge', 'Preview')}
         </span>
       </div>
 
@@ -70,7 +73,7 @@ function AIInsights({ onNavigate }) {
         className="bg-white text-agri-green text-sm font-semibold px-5 py-2.5 rounded-xl
                    hover:bg-green-50 transition-colors duration-200"
       >
-        View AI Centre →
+        {t('view_ai_centre', 'View Decision Support →')}
       </button>
     </div>
   )
@@ -78,6 +81,7 @@ function AIInsights({ onNavigate }) {
 
 /* ─── Upcoming Activities ────────────────────────────────────────────────── */
 function UpcomingActivities({ activities }) {
+  const { t } = useTranslation()
   const activityIcons = {
     harvest: { icon: '🌾', color: 'bg-orange-100 text-orange-700' },
     pickup:  { icon: '🚛', color: 'bg-blue-100 text-blue-700'   },
@@ -87,15 +91,15 @@ function UpcomingActivities({ activities }) {
   if (activities.length === 0) {
     return (
       <div className="card">
-        <h2 className="font-semibold text-gray-900 text-sm mb-4">Upcoming Activities</h2>
-        <p className="text-sm text-gray-400">No upcoming activities. Mark orders Ready for Pickup to schedule pickups.</p>
+        <h2 className="font-semibold text-gray-900 text-sm mb-4">{t('upcoming_activities', 'Upcoming Activities')}</h2>
+        <p className="text-sm text-gray-400">{t('no_upcoming', 'No upcoming activities. Mark orders Ready for Pickup to schedule pickups.')}</p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h2 className="font-semibold text-gray-900 text-sm mb-4">Upcoming Activities</h2>
+      <h2 className="font-semibold text-gray-900 text-sm mb-4">{t('upcoming_activities', 'Upcoming Activities')}</h2>
       <div className="space-y-3">
         {activities.map((a) => {
           const style = activityIcons[a.type] || { icon: '📌', color: 'bg-gray-100 text-gray-600' }
@@ -131,6 +135,7 @@ const categoryColorMap = {
 export default function FarmerDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { bookings, orders, earnings, loading, error } = useOrders()
 
   const [crops, setCrops] = useState([])
@@ -144,7 +149,6 @@ export default function FarmerDashboard() {
       .finally(() => setCropsLoading(false))
   }, [])
 
-  // ── Derive KPIs from real data ──────────────────────────────────────────────
   const pendingBookings = bookings.filter((b) => b.status === 'Pending')
   const activeOrders = orders.filter((o) =>
     ['Confirmed', 'Preparing', 'Ready for Pickup', 'Picked Up', 'In Transit'].includes(o.status)
@@ -152,13 +156,12 @@ export default function FarmerDashboard() {
   const totalEarnings = earnings?.summary?.totalEarnings || 0
 
   const kpis = [
-    { id: 'crops',    label: 'Total Crops',     value: String(crops.length),        icon: 'crops',    trend: crops.length > 0 ? `${crops.filter((c) => c.status === 'Pre-Harvest').length} pre-harvest` : '', color: 'green' },
-    { id: 'bookings', label: 'Active Bookings',  value: String(pendingBookings.length), icon: 'bookings', trend: pendingBookings.length > 0 ? 'Awaiting your response' : 'All caught up',         color: 'blue' },
-    { id: 'orders',   label: 'Pending Orders',  value: String(activeOrders.length),    icon: 'orders',   trend: activeOrders.length > 0 ? 'Awaiting dispatch' : 'No pending orders',             color: 'amber' },
-    { id: 'earnings', label: 'Total Earnings',  value: `₹${totalEarnings.toLocaleString()}`, icon: 'earnings', trend: `${earnings?.summary?.pendingPayments ? `₹${earnings.summary.pendingPayments.toLocaleString()} pending` : 'No pending payments'}`, color: 'emerald' },
+    { id: 'crops',    label: t('total_crops', 'Total Crops'),    value: String(crops.length),              icon: 'crops',    trend: crops.length > 0 ? `${crops.filter((c) => c.status === 'Pre-Harvest').length} ${t('pre_harvest_label','pre-harvest')}` : '', color: 'green' },
+    { id: 'bookings', label: t('active_bookings','Active Bookings'), value: String(pendingBookings.length), icon: 'bookings', trend: pendingBookings.length > 0 ? t('awaiting_response','Awaiting your response') : t('all_caught_up','All caught up'), color: 'blue' },
+    { id: 'orders',   label: t('pending_orders','Pending Orders'),  value: String(activeOrders.length),    icon: 'orders',   trend: activeOrders.length > 0 ? t('awaiting_dispatch','Awaiting dispatch') : t('no_pending_orders','No pending orders'), color: 'amber' },
+    { id: 'earnings', label: t('total_earnings','Total Earnings'), value: `₹${totalEarnings.toLocaleString()}`, icon: 'earnings', trend: earnings?.summary?.pendingPayments ? `₹${earnings.summary.pendingPayments.toLocaleString()} ${t('pending_payment_label','pending')}` : t('no_pending_payments','No pending payments'), color: 'emerald' },
   ]
 
-  // ── Derive crop cards from real crops (first 3) ─────────────────────────────
   const cropCards = crops.slice(0, 3).map((c) => ({
     id:     c.id,
     name:   c.name,
@@ -169,7 +172,6 @@ export default function FarmerDashboard() {
     color:  categoryColorMap[c.category] || 'green',
   }))
 
-  // ── Derive recent orders (first 3 by date) ──────────────────────────────────
   const recentOrderRows = orders.slice(0, 3).map((o) => ({
     id:     o.id.slice(-8).toUpperCase(),
     buyer:  o.buyerCompany || o.buyerName,
@@ -178,7 +180,6 @@ export default function FarmerDashboard() {
     status: o.status,
   }))
 
-  // ── Derive upcoming activities from active orders ───────────────────────────
   const upcomingActivities = activeOrders
     .filter((o) => o.status === 'Ready for Pickup' || o.status === 'Picked Up' || o.scheduledPickupDate)
     .slice(0, 3)
@@ -194,6 +195,105 @@ export default function FarmerDashboard() {
         : 'TBD'
       return { id: `act-${i}`, title, date, type }
     })
+
+  return (
+    <div className="space-y-6">
+      <Greeting name={user?.name} />
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+          {t('failed_load_data','Failed to load some dashboard data')}: {error}
+        </div>
+      )}
+      {cropsError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+          {t('failed_load_crops','Failed to load crops')}: {cropsError}
+        </div>
+      )}
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {loading || cropsLoading
+          ? [1, 2, 3, 4].map((i) => <div key={i} className="rounded-2xl h-24 bg-gray-100 animate-pulse" />)
+          : kpis.map((kpi) => <KPICard key={kpi.id} {...kpi} />)}
+      </div>
+
+      {/* AI + Upcoming */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <AIInsights onNavigate={() => navigate('/farmer/ai')} />
+        </div>
+        <UpcomingActivities activities={upcomingActivities} />
+      </div>
+
+      {/* Crop Overview */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900">{t('crop_overview','Crop Overview')}</h2>
+          <button onClick={() => navigate('/farmer/crops')} className="text-sm text-agri-green font-medium hover:underline">
+            {t('view_all','View all')}
+          </button>
+        </div>
+        {cropsLoading ? (
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => <div key={i} className="card h-40 animate-pulse" />)}
+          </div>
+        ) : cropCards.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-16 h-16 bg-agri-light rounded-2xl flex items-center justify-center text-3xl mb-4">🌱</div>
+            <p className="font-semibold text-gray-700">{t('no_crops_yet','No crops yet')}</p>
+            <p className="text-sm text-gray-400 mt-1">{t('add_first_crop','Add your first crop to get started.')}</p>
+            <button onClick={() => navigate('/farmer/crops/add')} className="btn-primary mt-4 text-sm px-6">{t('add_crop_btn','Add Crop')}</button>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {cropCards.map((crop) => <CropCard key={crop.id} {...crop} />)}
+          </div>
+        )}
+      </div>
+
+      {/* Recent Orders */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900">{t('recent_orders','Recent Orders')}</h2>
+          <button onClick={() => navigate('/farmer/orders')} className="text-sm text-agri-green font-medium hover:underline">
+            {t('view_all','View all')}
+          </button>
+        </div>
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="space-y-3 p-4">{[1, 2, 3].map((i) => <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />)}</div>
+          </div>
+        ) : recentOrderRows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-16 h-16 bg-agri-light rounded-2xl flex items-center justify-center text-3xl mb-4">📦</div>
+            <p className="font-semibold text-gray-700">{t('no_orders_yet','No orders yet')}</p>
+            <p className="text-sm text-gray-400 mt-1">{t('accept_booking_first','Accept a booking to create your first order.')}</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('order_id_col','Order ID')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('buyer_col','Buyer')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('crop_col','Crop')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('amount_col','Amount')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('status_col','Status')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {recentOrderRows.map((order) => <OrderRow key={order.id} {...order} />)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
   return (
     <div className="space-y-6">

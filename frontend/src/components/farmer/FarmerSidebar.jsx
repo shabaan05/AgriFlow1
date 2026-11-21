@@ -73,6 +73,7 @@ const labelMap = {
   'Dashboard': 'dashboard',
   'Crops': 'crops',
   'Demand': 'demand',
+  'Decision Support': 'decision_support',
   'AI Centre': 'ai_centre',
   'Bookings & Orders': 'bookings_orders',
   'Profile': 'profile',
@@ -102,7 +103,7 @@ export default function FarmerSidebar({ mobileOpen, onClose }) {
             <span className="text-base font-bold text-agri-green"> AI</span>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-1 pl-10">Farmer Portal</p>
+        <p className="text-xs text-gray-400 mt-1 pl-10">{t('farmer_portal', 'Farmer Portal')}</p>
       </div>
 
       {/* Nav */}

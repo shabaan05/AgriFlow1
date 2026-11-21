@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCrops } from '../../../context/CropsContext.jsx'
+import { useTranslation } from '../../../context/LanguageContext.jsx'
 import CropListCard from '../../../components/crops/CropListCard.jsx'
 import PageHeader   from '../../../components/ui/PageHeader.jsx'
 import { CROP_STATUSES } from '../../../data/cropData.js'
 import MandiTickerBar   from '../../../components/mandi/MandiTickerBar.jsx'
 import MandiMarketModal from '../../../components/mandi/MandiMarketModal.jsx'
 
-// ── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, color }) {
   const colors = {
     green:  'bg-green-50  text-agri-green',
@@ -23,7 +23,6 @@ function StatCard({ label, value, color }) {
   )
 }
 
-// ── Skeleton loader ──────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div className="card animate-pulse p-5 space-y-3">
@@ -47,8 +46,8 @@ function SkeletonCard() {
   )
 }
 
-// ── Delete modal ─────────────────────────────────────────────────────────────
 function DeleteModal({ crop, onConfirm, onCancel, deleting }) {
+  const { t } = useTranslation()
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
@@ -58,36 +57,23 @@ function DeleteModal({ crop, onConfirm, onCancel, deleting }) {
               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </div>
-        <h3 className="font-bold text-gray-900 text-lg">Delete Crop?</h3>
+        <h3 className="font-bold text-gray-900 text-lg">{t('delete_crop_title','Delete Crop?')}</h3>
         <p className="text-sm text-gray-500 mt-1">
-          Are you sure you want to delete{' '}
-          <span className="font-semibold text-gray-800">{crop?.name}</span>?
-          This cannot be undone.
+          {crop?.name} — {t('delete_crop_confirm','This cannot be undone.')}
         </p>
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onCancel}
-            disabled={deleting}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium
-                       text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            Cancel
+          <button onClick={onCancel} disabled={deleting}
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            {t('cancel','Cancel')}
           </button>
-          <button
-            onClick={onConfirm}
-            disabled={deleting}
-            className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold
-                       hover:bg-red-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
-          >
+          <button onClick={onConfirm} disabled={deleting}
+            className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2">
             {deleting ? (
-              <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
-                Deleting…
-              </>
-            ) : 'Delete'}
+              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>{t('deleting_btn','Deleting…')}</>
+            ) : t('delete_btn','Delete')}
           </button>
         </div>
       </div>
@@ -95,16 +81,16 @@ function DeleteModal({ crop, onConfirm, onCancel, deleting }) {
   )
 }
 
-// ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyState({ hasFilter, onClear, onAdd }) {
+  const { t } = useTranslation()
   if (hasFilter) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl mb-4">🔍</div>
-        <p className="font-semibold text-gray-700">No crops match your filter</p>
-        <p className="text-sm text-gray-400 mt-1">Try a different status or clear your search.</p>
+        <p className="font-semibold text-gray-700">{t('no_crops_filter','No crops match your filter')}</p>
+        <p className="text-sm text-gray-400 mt-1">{t('try_different_filter','Try a different status or clear your search.')}</p>
         <button onClick={onClear} className="mt-4 text-sm text-agri-green font-semibold hover:underline">
-          Clear filters
+          {t('clear_filters','Clear filters')}
         </button>
       </div>
     )
@@ -112,38 +98,33 @@ function EmptyState({ hasFilter, onClear, onAdd }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-16 h-16 bg-agri-light rounded-2xl flex items-center justify-center text-3xl mb-4">🌾</div>
-      <p className="font-semibold text-gray-700">No crops listed yet</p>
-      <p className="text-sm text-gray-400 mt-1 max-w-xs">
-        Add your first crop to start connecting with buyers and managing your harvest.
-      </p>
-      <button onClick={onAdd} className="btn-primary mt-5 text-sm px-6">
-        Add Your First Crop
-      </button>
+      <p className="font-semibold text-gray-700">{t('no_crops_listed','No crops listed yet')}</p>
+      <p className="text-sm text-gray-400 mt-1 max-w-xs">{t('add_first_crop_desc','Add your first crop to start connecting with buyers.')}</p>
+      <button onClick={onAdd} className="btn-primary mt-5 text-sm px-6">{t('add_first_crop_btn','Add Your First Crop')}</button>
     </div>
   )
 }
 
-// ── Error banner ──────────────────────────────────────────────────────────────
 function ErrorBanner({ message, onRetry }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 mb-6">
       <div className="flex items-center gap-3">
         <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <p className="text-sm text-red-700 font-medium">{message}</p>
       </div>
       <button onClick={onRetry} className="text-sm font-semibold text-red-600 hover:underline flex-shrink-0">
-        Retry
+        {t('retry_btn','Retry')}
       </button>
     </div>
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function MyCrops() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { crops, loading, error, fetchCrops, deleteCrop } = useCrops()
 
   const [search,         setSearch]         = useState('')
@@ -184,103 +165,77 @@ export default function MyCrops() {
   return (
     <div>
       <PageHeader
-        title="My Crops"
-        subtitle={loading ? 'Loading…' : `${total} crop${total !== 1 ? 's' : ''} listed`}
+        title={t('my_crops', 'My Crops')}
+        subtitle={loading
+          ? t('loading_label','Loading…')
+          : `${total} ${total !== 1 ? t('my_crops_subtitle_plural','crops listed') : t('my_crops_subtitle','crop listed')}`}
         action={
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMandiModalOpen(true)}
               className="bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-semibold px-3.5 py-2 rounded-xl text-sm flex items-center gap-1.5 transition-all shadow-sm"
-              title="Explore real-time APMC Mandi rates"
             >
               <span>🌾</span>
-              <span>Live Mandi Rates</span>
+              <span>{t('live_mandi_rates','Live Mandi Rates')}</span>
               <span className="flex h-1.5 w-1.5 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600"></span>
               </span>
             </button>
-
-            <button
-              onClick={() => navigate('/farmer/crops/add')}
-              className="btn-primary text-sm flex items-center gap-2"
-            >
+            <button onClick={() => navigate('/farmer/crops/add')} className="btn-primary text-sm flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add Crop
+              {t('add_crop','Add Crop')}
             </button>
           </div>
         }
       />
 
-      {/* Live Mandi Ticker Bar */}
       <div className="mb-4">
         <MandiTickerBar onOpenMarketModal={() => setMandiModalOpen(true)} />
       </div>
 
       {error && <ErrorBanner message={error} onRetry={fetchCrops} />}
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total Crops"   value={loading ? '—' : total}        color="gray"   />
-        <StatCard label="Pre-Harvest"   value={loading ? '—' : preHarvest}   color="orange" />
-        <StatCard label="Harvest Ready" value={loading ? '—' : harvestReady} color="green"  />
-        <StatCard label="Active"        value={loading ? '—' : active}       color="blue"   />
+        <StatCard label={t('total_crops_stat','Total Crops')}     value={loading ? '—' : total}        color="gray"   />
+        <StatCard label={t('pre_harvest_label','Pre-Harvest')}    value={loading ? '—' : preHarvest}   color="orange" />
+        <StatCard label={t('harvest_ready_stat','Harvest Ready')} value={loading ? '—' : harvestReady} color="green"  />
+        <StatCard label={t('active_stat','Active')}               value={loading ? '—' : active}       color="blue"   />
       </div>
 
-      {/* Mandi Market Modal */}
-      <MandiMarketModal
-        isOpen={mandiModalOpen}
-        onClose={() => setMandiModalOpen(false)}
-        farmerCrops={crops}
-      />
+      <MandiMarketModal isOpen={mandiModalOpen} onClose={() => setMandiModalOpen(false)} farmerCrops={crops} />
 
-      {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-               fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
-            placeholder="Search by crop name, variety or location…"
+            placeholder={t('search_crops_placeholder','Search by crop name, variety or location…')}
             className="input-field pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <select
-          className="input-field bg-white sm:w-48 flex-shrink-0"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All Statuses</option>
+        <select className="input-field bg-white sm:w-48 flex-shrink-0" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="All">{t('all_statuses','All Statuses')}</option>
           {CROP_STATUSES.map((s) => <option key={s}>{s}</option>)}
         </select>
       </div>
 
-      {/* Loading skeletons */}
       {loading && crops.length === 0 ? (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {[1,2,3,4,5,6].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState
-          hasFilter={hasFilter}
-          onClear={() => { setSearch(''); setStatusFilter('All') }}
-          onAdd={() => navigate('/farmer/crops/add')}
-        />
+        <EmptyState hasFilter={hasFilter} onClear={() => { setSearch(''); setStatusFilter('All') }} onAdd={() => navigate('/farmer/crops/add')} />
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((crop) => (
-            <CropListCard
-              key={crop.id}
-              crop={crop}
-              onDelete={(id) => setDeleteTarget(crops.find((c) => c.id === id))}
-            />
+            <CropListCard key={crop.id} crop={crop} onDelete={(id) => setDeleteTarget(crops.find((c) => c.id === id))} />
           ))}
         </div>
       )}

@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCrops } from '../../../context/CropsContext.jsx'
+import { useTranslation } from '../../../context/LanguageContext.jsx'
 import CropForm   from '../../../components/crops/CropForm.jsx'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
 
 export default function AddCrop() {
   const navigate    = useNavigate()
   const { addCrop } = useCrops()
+  const { t } = useTranslation()
 
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
@@ -18,7 +20,7 @@ export default function AddCrop() {
       const newCrop = await addCrop(data)
       navigate(`/farmer/crops/${newCrop.id}`, { state: { fromAdd: true } })
     } catch (err) {
-      setApiError(err.message || 'Failed to save crop. Please try again.')
+      setApiError(err.message || t('failed_save_crop','Failed to save crop. Please try again.'))
       setLoading(false)
     }
   }
@@ -26,8 +28,8 @@ export default function AddCrop() {
   return (
     <div className="max-w-3xl">
       <PageHeader
-        title="Add New Crop"
-        subtitle="Fill in the details about your crop. All fields marked * are required."
+        title={t('add_new_crop_title','Add New Crop')}
+        subtitle={t('add_new_crop_subtitle','Fill in the details about your crop. All fields marked * are required.')}
       />
 
       {apiError && (

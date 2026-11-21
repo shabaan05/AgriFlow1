@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAI } from '../../../context/AIContext.jsx'
+import { useTranslation } from '../../../context/LanguageContext.jsx'
 
 const iconSvg = {
   match: (
@@ -96,6 +97,7 @@ function SkeletonAgentCard() {
 export default function AICentreDashboard() {
   const { summary, loading, error } = useAI()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   return (
     <div>
@@ -107,24 +109,22 @@ export default function AICentreDashboard() {
           <div className="flex items-center gap-2 mb-3">
             <span className="w-2.5 h-2.5 bg-green-300 rounded-full animate-pulse" />
             <span className="text-green-200 text-xs font-semibold uppercase tracking-widest">
-              Agentic AI Platform
+              {t('ai_agents_tagline','Agentic AI Platform')}
             </span>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Four AI Agents. One Intelligent Farm.</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">{t('ai_hero_title','Four AI Agents. One Intelligent Farm.')}</h2>
           <p className="text-green-100 text-sm max-w-xl leading-relaxed">
-            AgriFlow AI deploys specialised agents that work in the background — matching buyers,
-            optimising harvest timing, monitoring shelf life, and preventing wastage.
-            Each agent uses your live crop and demand data to generate recommendations.
+            {t('ai_hero_desc','AgriFlow AI deploys specialised agents that work in the background — matching buyers, optimising harvest timing, monitoring shelf life, and preventing wastage.')}
           </p>
           <div className="mt-4 inline-flex items-center gap-2 bg-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full">
-            🤖 Demo recommendations — real ML models coming in next phase
+            {t('ai_demo_note','🤖 Demo recommendations — real ML models coming in next phase')}
           </div>
         </div>
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-sm text-red-700 mb-6">
-          Failed to load AI summary: {error}
+          {t('ai_failed_load','Failed to load AI summary')}: {error}
         </div>
       )}
 
@@ -136,13 +136,12 @@ export default function AICentreDashboard() {
         }
       </div>
 
-      {/* Demand Forecast — live agent (separate from demo agents above) */}
+      {/* Demand Forecast — live agent */}
       <div
         className="card hover:shadow-md transition-all duration-200 border border-agri-green/20
                    hover:border-agri-green/50 flex flex-col sm:flex-row gap-4 mb-8 cursor-pointer group"
         onClick={() => navigate('/farmer/ai/demand-forecast')}
-        role="button"
-        tabIndex={0}
+        role="button" tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && navigate('/farmer/ai/demand-forecast')}
       >
         <div className="flex items-start gap-4 flex-1">
@@ -154,32 +153,29 @@ export default function AICentreDashboard() {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900 text-base">Demand Forecast Agent</h3>
+              <h3 className="font-semibold text-gray-900 text-base">{t('demand_forecast_agent','Demand Forecast Agent')}</h3>
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-green-400" />
                 <span className="status-badge text-xs bg-green-100 text-green-700">Live</span>
               </span>
             </div>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Forecast buyer demand for your crops using real order and booking data.
-              Understand demand trends and plan your planting cycles ahead of the market.
-            </p>
+            <p className="text-sm text-gray-500 leading-relaxed">{t('demand_forecast_desc','Forecast buyer demand for your crops using real order and booking data.')}</p>
           </div>
         </div>
         <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 flex-shrink-0">
           <div className="text-right">
             <span className="text-2xl font-bold text-agri-green">WMA</span>
-            <span className="text-xs text-gray-400 ml-1.5">forecast</span>
+            <span className="text-xs text-gray-400 ml-1.5">{t('wma_forecast_label','forecast')}</span>
           </div>
           <span className="text-sm font-semibold text-agri-green group-hover:underline whitespace-nowrap">
-            Open Agent →
+            {t('open_agent','Open Agent →')}
           </span>
         </div>
       </div>
 
       {/* Pipeline diagram */}
       <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
-        <p className="text-xs font-semibold text-gray-700 mb-3">How the agents work together</p>
+        <p className="text-xs font-semibold text-gray-700 mb-3">{t('ai_how_agents_work','How the agents work together')}</p>
         <div className="flex flex-wrap gap-2 items-center text-xs text-gray-500">
           {[
             { label: 'Farm Data',          cls: 'bg-white border border-gray-200' },
